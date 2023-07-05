@@ -22,7 +22,8 @@ packages = [
 "Changelog" = "https://github.com/chemelli74/aiocomelit/blob/main/CHANGELOG.md"
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.9"
+aiohttp = "*"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.0"
