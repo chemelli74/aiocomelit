@@ -173,8 +173,8 @@ class ComeliteSerialBridgeAPi:
 
         return self._devices
 
-    async def get_alarm_config(self) -> list[ComelitVedoObject]:
-        """Get Comelit SimpleHome alarm configuration."""
+    async def alarm_login(self) -> bool:
+        """Login to vedo alarm system."""
         _LOGGER.debug("Logging into %s (VEDO)", self.host)
         try:
             logged = await self._do_alarm_login()
@@ -185,6 +185,12 @@ class ComeliteSerialBridgeAPi:
         if not logged:
             raise CannotAuthenticate
 
+        return True
+
+    async def get_alarm_config(self) -> list[ComelitVedoObject]:
+        """Get Comelit SimpleHome alarm configuration."""
+
+        await self.alarm_login()
         await asyncio.sleep(0.5)
 
         reply_json_desc = await self._get_alarm_desc()
