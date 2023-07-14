@@ -1,3 +1,4 @@
+"""Test script for aiocomelit library."""
 import argparse
 import asyncio
 import logging
@@ -30,6 +31,8 @@ async def main() -> None:
 
     print("-" * 20)
     api = ComeliteSerialBridgeAPi(args.bridge, args.alarm_pin)
+    await api.login()
+    print("-" * 20)
     devices = await api.get_all_devices()
     print("Devices:", devices)
     print("-" * 20)
@@ -40,10 +43,14 @@ async def main() -> None:
         if device.index == 1:
             if device.type == LIGHT:
                 print("Test light switch on:", device.name)
+                print("status before: ", await api.light_status(device.index))
                 await api.light_switch(device.index, LIGHT_ON)
+                print("status after: ", await api.light_status(device.index))
             if device.type == COVER:
                 print("Test cover  open  on:", device.name)
+                print("status before: ", await api.cover_status(device.index))
                 await api.cover_move(device.index, COVER_OPEN)
+                print("status after: ", await api.cover_status(device.index))
     print("-" * 20)
     print("Logout & close session")
     await api.logout()

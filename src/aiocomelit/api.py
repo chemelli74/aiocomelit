@@ -7,7 +7,17 @@ from typing import Any
 
 import aiohttp
 
-from .const import _LOGGER, CLIMATE, COVER, COVER_STATUS, LIGHT, MAX_ZONES, OTHER
+from .const import (
+    _LOGGER,
+    CLIMATE,
+    COVER,
+    COVER_STATUS,
+    LIGHT,
+    LIGHT_ON,
+    MAX_ZONES,
+    OTHER,
+    SLEEP,
+)
 from .exceptions import CannotAuthenticate, CannotConnect
 
 
@@ -64,6 +74,7 @@ class ComeliteSerialBridgeAPi:
         self._unique_id: str | None = None
         self._devices: list[ComelitSerialBridgeObject] = []
         self._alarm: list[ComelitVedoObject] = []
+        self._alarm_logged: bool = False
 
     async def _get_devices(self, device_type: str) -> dict[str, Any]:
         """Get devices description."""
@@ -93,6 +104,20 @@ class ComeliteSerialBridgeAPi:
         )
         return response.status == 200
 
+    async def _get_device_status(self, device_type: str, index: int) -> int:
+        """Get device status, -1 means API call failed."""
+        url = f"{self.base_url}/user/icon_status.json?type={device_type}"
+        response = await self.session.get(
+            url,
+            headers=self.headers,
+            timeout=10,
+        )
+        if response.status == 200:
+            json = await response.json()
+            _LOGGER.debug("Device %s status: %s", device_type, json["status"])
+            return json["status"][index]
+        return -1
+
     async def _set_cookie(self, value: str) -> None:
         """Enable required session cookie."""
         self.session.cookie_jar.update_cookies(
@@ -101,6 +126,9 @@ class ComeliteSerialBridgeAPi:
 
     async def _do_alarm_login(self) -> bool:
         """Login into VEDO system via Comelit Serial Bridge."""
+        if self._alarm_logged:
+            return True
+
         payload = {"alm": self.alarm_pin}
         url = f"{self.base_url}/login.cgi"
         response = await self.session.post(
@@ -143,16 +171,37 @@ class ComeliteSerialBridgeAPi:
         if dev_type == COVER:
             return COVER_STATUS[dev_status]
 
-        return "on" if dev_status == 1 else "off"
+        return "on" if dev_status == LIGHT_ON else "off"
+
+    async def login(self) -> bool:
+        """Login to Serial Bridge device."""
+        _LOGGER.info("Logging into Serial Bridge %s", self.host)
+        url = f"{self.base_url}/login.json"
+        response = await self.session.get(
+            url,
+            headers=self.headers,
+            timeout=10,
+        )
+
+        return response.status == 200
 
     async def light_switch(self, index: int, action: int) -> bool:
         """Set status of the light."""
         return await self._set_device_status(LIGHT, index, action)
 
+    async def light_status(self, index: int) -> int:
+        """Get status of the light."""
+        await asyncio.sleep(SLEEP)
+        return await self._get_device_status(LIGHT, index)
+
     async def cover_move(self, index: int, action: int) -> bool:
         """Move cover up/down."""
-
         return await self._set_device_status(COVER, index, action)
+
+    async def cover_status(self, index: int) -> int:
+        """Get cover status."""
+        await asyncio.sleep(SLEEP)
+        return await self._get_device_status(COVER, index)
 
     async def get_all_devices(self) -> list[ComelitSerialBridgeObject]:
         """Get all connected devices."""
@@ -186,21 +235,21 @@ class ComeliteSerialBridgeAPi:
         """Login to vedo alarm system."""
         _LOGGER.debug("Logging into %s (VEDO)", self.host)
         try:
-            logged = await self._do_alarm_login()
+            self._alarm_logged = await self._do_alarm_login()
         except (asyncio.exceptions.TimeoutError, aiohttp.ClientConnectorError) as exc:
             _LOGGER.warning("Connection error for %s", self.host)
             raise CannotConnect from exc
 
-        if not logged:
+        if not self._alarm_logged:
             raise CannotAuthenticate
 
+        await asyncio.sleep(SLEEP)
         return True
 
     async def get_alarm_config(self) -> list[ComelitVedoObject]:
         """Get Comelit SimpleHome alarm configuration."""
 
         await self.alarm_login()
-        await asyncio.sleep(0.5)
 
         reply_json_desc = await self._get_alarm_desc()
         _LOGGER.debug("Alarm description: %s", reply_json_desc)
