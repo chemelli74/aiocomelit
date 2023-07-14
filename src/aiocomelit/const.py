@@ -20,3 +20,6 @@ LIGHT_ON = 1
 
 # Maximum number of zones for a VEDO alarm device
 MAX_ZONES = 8
+
+# Min time between updates
+SLEEP = 0.5
