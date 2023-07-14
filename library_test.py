@@ -3,6 +3,7 @@ import asyncio
 import logging
 
 from aiocomelit.api import ComeliteSerialBridgeAPi
+from aiocomelit.const import COVER, COVER_OPEN, LIGHT, LIGHT_ON
 
 
 def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
@@ -35,6 +36,16 @@ async def main() -> None:
     alarm = await api.get_alarm_config()
     print("Alarm config:", alarm)
     print("-" * 20)
+    for device in devices:
+        if device.index == 1:
+            if device.type == LIGHT:
+                print("Test light switch on:", device.name)
+                await api.light_switch(device.index, LIGHT_ON)
+            if device.type == COVER:
+                print("Test cover  open  on:", device.name)
+                await api.cover_move(device.index, COVER_OPEN)
+    print("-" * 20)
+    print("Logout & close session")
     await api.logout()
     await api.close()
 
