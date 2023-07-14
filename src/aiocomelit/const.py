@@ -12,5 +12,11 @@ OTHER = "other"
 # Statuses
 COVER_STATUS: list[str] = ["stopped", "opening", "closing"]
 
+# Actions
+COVER_CLOSE = 0
+COVER_OPEN = 1
+LIGHT_OFF = 0
+LIGHT_ON = 1
+
 # Maximum number of zones for a VEDO alarm device
 MAX_ZONES = 8

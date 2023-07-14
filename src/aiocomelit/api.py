@@ -145,6 +145,15 @@ class ComeliteSerialBridgeAPi:
 
         return "on" if dev_status == 1 else "off"
 
+    async def light_switch(self, index: int, action: int) -> bool:
+        """Set status of the light."""
+        return await self._set_device_status(LIGHT, index, action)
+
+    async def cover_move(self, index: int, action: int) -> bool:
+        """Move cover up/down."""
+
+        return await self._set_device_status(COVER, index, action)
+
     async def get_all_devices(self) -> list[ComelitSerialBridgeObject]:
         """Get all connected devices."""
 
