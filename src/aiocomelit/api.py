@@ -72,8 +72,8 @@ class ComeliteSerialBridgeAPi:
         jar = aiohttp.CookieJar(unsafe=True)
         self.session = aiohttp.ClientSession(cookie_jar=jar)
         self._unique_id: str | None = None
-        self._devices: list[ComelitSerialBridgeObject] = []
-        self._alarm: list[ComelitVedoObject] = []
+        self._devices: dict[str, dict[int, ComelitSerialBridgeObject]] = {}
+        self._alarm: dict[str, dict[int, ComelitVedoObject]] = {}
         self._alarm_logged: bool = False
 
     async def _get_devices(self, device_type: str) -> dict[str, Any]:
@@ -126,9 +126,6 @@ class ComeliteSerialBridgeAPi:
 
     async def _do_alarm_login(self) -> bool:
         """Login into VEDO system via Comelit Serial Bridge."""
-        if self._alarm_logged:
-            return True
-
         payload = {"alm": self.alarm_pin}
         url = f"{self.base_url}/login.cgi"
         response = await self.session.post(
@@ -137,6 +134,10 @@ class ComeliteSerialBridgeAPi:
             headers=self.headers,
             timeout=10,
         )
+        if "sid" not in response.cookies:
+            _LOGGER.debug('No "sid" cookie in VEDO login response for %s', self.host)
+            return False
+
         await self._set_cookie(response.cookies["sid"])
 
         return response.status == 200
@@ -203,7 +204,7 @@ class ComeliteSerialBridgeAPi:
         await asyncio.sleep(SLEEP)
         return await self._get_device_status(COVER, index)
 
-    async def get_all_devices(self) -> list[ComelitSerialBridgeObject]:
+    async def get_all_devices(self) -> dict[str, dict[int, ComelitSerialBridgeObject]]:
         """Get all connected devices."""
 
         _LOGGER.debug("Getting all devices for host %s", self.host)
@@ -215,6 +216,7 @@ class ComeliteSerialBridgeAPi:
                 dev_type,
                 reply_json,
             )
+            devices = {}
             for i in range(reply_json["num"]):
                 status = reply_json["status"][i]
                 dev_info = ComelitSerialBridgeObject(
@@ -227,7 +229,8 @@ class ComeliteSerialBridgeAPi:
                     protected=reply_json["protected"][i],
                     zone=reply_json["env_desc"][reply_json["env"][i]],
                 )
-                self._devices.append(dev_info)
+                devices.update({i: dev_info})
+            self._devices.update({dev_type: devices})
 
         return self._devices
 
@@ -241,12 +244,13 @@ class ComeliteSerialBridgeAPi:
             raise CannotConnect from exc
 
         if not self._alarm_logged:
+            _LOGGER.warning("Authentication failed for %s (VEDO)", self.host)
             raise CannotAuthenticate
 
         await asyncio.sleep(SLEEP)
         return True
 
-    async def get_alarm_config(self) -> list[ComelitVedoObject]:
+    async def get_alarm_config(self) -> dict[str, dict[int, ComelitVedoObject]]:
         """Get Comelit SimpleHome alarm configuration."""
 
         await self.alarm_login()
@@ -257,8 +261,9 @@ class ComeliteSerialBridgeAPi:
         _LOGGER.debug("Alarm statistics: %s", reply_json_stat)
 
         if (reply_json_desc or reply_json_stat) is {}:
-            return []
+            return {}
 
+        alarms = {}
         for i in range(MAX_ZONES):
             if reply_json_desc["description"][i] == "":
                 continue
@@ -277,7 +282,8 @@ class ComeliteSerialBridgeAPi:
                 in_time=reply_json_stat["in_time"][i],
                 out_time=reply_json_stat["out_time"][i],
             )
-            self._alarm.append(vedo)
+            alarms.update({i: vedo})
+        self._alarm.update({"alarm": alarms})
 
         return self._alarm
 
