@@ -39,18 +39,21 @@ async def main() -> None:
     alarm = await api.get_alarm_config()
     print("Alarm config:", alarm)
     print("-" * 20)
-    for device in devices:
+    for index, device in devices[LIGHT].items():
         if device.index == 1:
-            if device.type == LIGHT:
-                print("Test light switch on:", device.name)
-                print("status before: ", await api.light_status(device.index))
-                await api.light_switch(device.index, LIGHT_ON)
-                print("status after: ", await api.light_status(device.index))
-            if device.type == COVER:
-                print("Test cover  open  on:", device.name)
-                print("status before: ", await api.cover_status(device.index))
-                await api.cover_move(device.index, COVER_OPEN)
-                print("status after: ", await api.cover_status(device.index))
+            print("Test light switch on:", device.name)
+            print("status before: ", await api.light_status(device.index))
+            await api.light_switch(device.index, LIGHT_ON)
+            print("status after: ", await api.light_status(device.index))
+            break
+    for index, device in devices[COVER].items():
+        if device.index == 1:
+            print("Test cover  open  on:", device.name)
+            print("status before: ", await api.cover_status(device.index))
+            await api.cover_move(device.index, COVER_OPEN)
+            print("status after: ", await api.cover_status(device.index))
+            break
+
     print("-" * 20)
     print("Logout & close session")
     await api.logout()
