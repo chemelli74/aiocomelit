@@ -138,7 +138,7 @@ class ComeliteSerialBridgeAPi:
             _LOGGER.debug('No "sid" cookie in VEDO login response for %s', self.host)
             return False
 
-        await self._set_cookie(response.cookies["sid"])
+        await self._set_cookie(str(response.cookies["sid"]))
 
         return response.status == 200
 
