@@ -3,7 +3,7 @@ import argparse
 import asyncio
 import logging
 
-from aiocomelit.api import ComeliteSerialBridgeAPi
+from aiocomelit.api import ComeliteSerialBridgeApi
 from aiocomelit.const import COVER, COVER_OPEN, LIGHT, LIGHT_ON
 
 
@@ -30,34 +30,31 @@ async def main() -> None:
     parser, args = get_arguments()
 
     print("-" * 20)
-    api = ComeliteSerialBridgeAPi(args.bridge, args.alarm_pin)
-    await api.login()
+    bridge_api = ComeliteSerialBridgeApi(args.bridge, args.alarm_pin)
+    await bridge_api.login()
     print("-" * 20)
-    devices = await api.get_all_devices()
+    devices = await bridge_api.get_all_devices()
     print("Devices:", devices)
     print("-" * 20)
-    alarm = await api.get_alarm_config()
-    print("Alarm config:", alarm)
-    print("-" * 20)
-    for index, device in devices[LIGHT].items():
+    for device in devices[LIGHT].values():
         if device.index == 1:
             print("Test light switch on:", device.name)
-            print("status before: ", await api.light_status(device.index))
-            await api.light_switch(device.index, LIGHT_ON)
-            print("status after: ", await api.light_status(device.index))
+            print("status before: ", await bridge_api.light_status(device.index))
+            await bridge_api.light_switch(device.index, LIGHT_ON)
+            print("status after: ", await bridge_api.light_status(device.index))
             break
-    for index, device in devices[COVER].items():
+    for device in devices[COVER].values():
         if device.index == 1:
             print("Test cover  open  on:", device.name)
-            print("status before: ", await api.cover_status(device.index))
-            await api.cover_move(device.index, COVER_OPEN)
-            print("status after: ", await api.cover_status(device.index))
+            print("status before: ", await bridge_api.cover_status(device.index))
+            await bridge_api.cover_move(device.index, COVER_OPEN)
+            print("status after: ", await bridge_api.cover_status(device.index))
             break
 
     print("-" * 20)
     print("Logout & close session")
-    await api.logout()
-    await api.close()
+    await bridge_api.logout()
+    await bridge_api.close()
 
 
 if __name__ == "__main__":
