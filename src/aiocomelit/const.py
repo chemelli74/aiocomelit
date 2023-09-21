@@ -3,6 +3,10 @@ import logging
 
 _LOGGER = logging.getLogger(__package__)
 
+# Host types
+BRIDGE = "Serial bridge"
+VEDO = "Vedo system"
+
 # Device types
 COVER = "shutter"
 LIGHT = "light"
@@ -10,6 +14,7 @@ CLIMATE = "clima"
 OTHER = "other"
 
 # Statuses
+ERROR_STATUS = -1
 COVER_STATUS: list[str] = ["stopped", "opening", "closing"]
 
 # Actions

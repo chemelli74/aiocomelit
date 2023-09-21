@@ -2,20 +2,24 @@
 import asyncio
 from dataclasses import dataclass
 from datetime import datetime
+from http.cookies import SimpleCookie
 from typing import Any
 
 import aiohttp
 
 from .const import (
     _LOGGER,
+    BRIDGE,
     CLIMATE,
     COVER,
     COVER_STATUS,
+    ERROR_STATUS,
     LIGHT,
     LIGHT_ON,
     MAX_ZONES,
     OTHER,
     SLEEP,
+    VEDO,
 )
 from .exceptions import CannotAuthenticate, CannotConnect
 
@@ -54,9 +58,12 @@ class ComelitVedoObject:
 
 
 class ComelitCommonApi:
-    def __init__(self, host: str) -> None:
+    """Common API calls for Comelit SimpleHome devices."""
+
+    def __init__(self, host: str, pin: int) -> None:
         """Initialize the session."""
         self.host = host
+        self.device_pin = pin
         self.base_url = f"http://{self.host}"
         self._headers = {
             "User-Agent": "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0",
@@ -67,6 +74,80 @@ class ComelitCommonApi:
         }
         jar = aiohttp.CookieJar(unsafe=True)
         self._session = aiohttp.ClientSession(cookie_jar=jar)
+
+    async def _get_page_result(
+        self, page: str, reply_json: bool = True
+    ) -> tuple[int, dict[str, Any]]:
+        """Return status and data from a GET query."""
+        timestamp = datetime.now().strftime("%s")
+        url = f"{self.base_url}{page}&_={timestamp}"
+        try:
+            response = await self._session.get(
+                url,
+                headers=self._headers,
+                timeout=10,
+            )
+        except (asyncio.exceptions.TimeoutError, aiohttp.ClientConnectorError) as exc:
+            _LOGGER.warning("Connection error during GET for host %s", self.host)
+            raise CannotConnect from exc
+
+        if not reply_json:
+            return response.status
+
+        data = await response.json() if response.status == 200 else {}
+        return response.status, data
+
+    async def _post_page_result(
+        self, page: str, payload: dict[str, Any]
+    ) -> SimpleCookie[str]:
+        """Return status and data from a POST query."""
+        url = f"{self.base_url}{page}"
+        try:
+            response = await self._session.post(
+                url,
+                data=payload,
+                headers=self._headers,
+                timeout=10,
+            )
+        except (asyncio.exceptions.TimeoutError, aiohttp.ClientConnectorError) as exc:
+            _LOGGER.warning("Connection error during POST for host %s", self.host)
+            raise CannotConnect from exc
+
+        return response.cookies
+
+    async def _login(self, payload: dict[str, Any], host_type: str) -> bool:
+        """Login into Comelit device."""
+        _LOGGER.info("Logging into host %s [%s]", self.host, host_type)
+
+        if self.device_pin:
+            cookies = await self._post_page_result("/login.cgi", payload)
+
+            if not cookies:
+                _LOGGER.warning(
+                    "Authentication failed for host %s [%s]: no cookies received",
+                    self.host,
+                    host_type,
+                )
+                raise CannotAuthenticate
+
+            self._session.cookie_jar.update_cookies(cookies)
+
+        reply_status, reply_json = await self._get_page_result("/login.json")
+
+        if host_type == BRIDGE:
+            logged = reply_json["domus"] != "000000000000"
+        else:
+            logged = reply_json["logged"] == 1
+
+        if not logged:
+            _LOGGER.warning(
+                "Authentication failed for host %s [%s]: generic error",
+                self.host,
+                host_type,
+            )
+            raise CannotAuthenticate
+
+        return True
 
     async def logout(self) -> None:
         """Comelit Simple Home logout."""
@@ -82,21 +163,8 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
 
     def __init__(self, host: str, bridge_pin: int) -> None:
         """Initialize the session."""
-        super().__init__(host)
-        self._bridge_pin = bridge_pin
+        super().__init__(host, bridge_pin)
         self._devices: dict[str, dict[int, ComelitSerialBridgeObject]] = {}
-
-    async def _get_devices(self, device_type: str) -> dict[str, Any]:
-        """Get devices description."""
-        timestamp = datetime.now().strftime("%s")
-        url = f"{self.base_url}/user/icon_desc.json?type={device_type}&_={timestamp}"
-        response = await self._session.get(
-            url,
-            headers=self._headers,
-            timeout=10,
-        )
-
-        return await response.json() if response.status == 200 else {}
 
     async def _set_device_status(
         self, device_type: str, index: int, action: int
@@ -105,30 +173,24 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
         0 = off/close
         1 = on/open
         """
-        timestamp = datetime.now().strftime("%s")
-        url = f"{self.base_url}/user/action.cgi?type={device_type}&num{action}={index}&_={timestamp}"
-        response = await self._session.get(
-            url,
-            headers=self._headers,
-            timeout=10,
+        reply_status = await self._get_page_result(
+            f"/user/action.cgi?type={device_type}&num{action}={index}", False
         )
-        return response.status == 200
+        return reply_status == 200
 
     async def _get_device_status(self, device_type: str, index: int) -> int:
         """Get device status, -1 means API call failed."""
-        url = f"{self.base_url}/user/icon_status.json?type={device_type}"
-        response = await self._session.get(
-            url,
-            headers=self._headers,
-            timeout=10,
+
+        reply_status, reply_json = await self._get_page_result(
+            f"/user/icon_status.json?type={device_type}"
         )
-        if response.status == 200:
-            json = await response.json()
-            _LOGGER.debug(
-                "Device %s[%s] status: %s", device_type, index, json["status"]
-            )
-            return json["status"][index]
-        return -1
+        if reply_status != 200:
+            return ERROR_STATUS
+
+        _LOGGER.debug(
+            "Device %s[%s] status: %s", device_type, index, reply_json["status"]
+        )
+        return reply_json["status"][index]
 
     async def _translate_device_status(self, dev_type: str, dev_status: int) -> str:
         """Makes status human readable."""
@@ -140,15 +202,8 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
 
     async def login(self) -> bool:
         """Login to Serial Bridge device."""
-        _LOGGER.info("Logging into Serial Bridge %s", self.host)
-        url = f"{self.base_url}/login.json"
-        response = await self._session.get(
-            url,
-            headers=self._headers,
-            timeout=10,
-        )
-
-        return response.status == 200
+        payload = {"dom": self.device_pin}
+        return await self._login(payload, BRIDGE)
 
     async def light_switch(self, index: int, action: int) -> bool:
         """Set status of the light."""
@@ -174,7 +229,9 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
         _LOGGER.debug("Getting all devices for host %s", self.host)
 
         for dev_type in (CLIMATE, COVER, LIGHT, OTHER):
-            reply_json = await self._get_devices(dev_type)
+            reply_status, reply_json = await self._get_page_result(
+                f"/user/icon_desc.json?type={dev_type}"
+            )
             _LOGGER.debug(
                 "List of devices of type %s: %s",
                 dev_type,
@@ -204,74 +261,23 @@ class ComelitVedoApi(ComelitCommonApi):
 
     def __init__(self, host: str, alarm_pin: int) -> None:
         """Initialize the VEDO session."""
-        super().__init__(host)
-        self.alarm_pin = alarm_pin
-        self._unique_id: str | None = None
+        super().__init__(host, alarm_pin)
         self._alarm: dict[str, dict[int, ComelitVedoObject]] = {}
-        self._alarm_logged: bool = False
-
-    async def _do_alarm_login(self) -> bool:
-        """Login into VEDO system."""
-        payload = {"alm": self.alarm_pin}
-        url = f"{self.base_url}/login.cgi"
-        response = await self._session.post(
-            url,
-            data=payload,
-            headers=self._headers,
-            timeout=10,
-        )
-        if "sid" not in response.cookies:
-            _LOGGER.debug('No "sid" cookie in VEDO login response for %s', self.host)
-            return False
-
-        await self._session.cookie_jar.update_cookies(response.cookies)
-
-        return response.status == 200
-
-    async def _get_vedo_desc(self) -> dict[str, Any]:
-        """Get alarm description for VEDO system."""
-        timestamp = datetime.now().strftime("%s")
-        url = f"{self.base_url}/user/vedo_area_desc.json?_={timestamp}"
-        response = await self._session.get(
-            url,
-            headers=self._headers,
-            timeout=10,
-        )
-
-        return await response.json() if response.status == 200 else {}
-
-    async def _get_vedo_stat(self) -> dict[str, Any]:
-        """Get alarm statistics for VEDO system."""
-        timestamp = datetime.now().strftime("%s")
-        url = f"{self.base_url}/user/vedo_area_stat.json?_={timestamp}"
-        response = await self._session.get(
-            url,
-            headers=self._headers,
-            timeout=10,
-        )
-
-        return await response.json() if response.status == 200 else {}
 
     async def login(self) -> bool:
         """Login to VEDO system."""
-        _LOGGER.debug("Logging into %s (VEDO)", self.host)
-        try:
-            self._alarm_logged = await self._do_alarm_login()
-        except (asyncio.exceptions.TimeoutError, aiohttp.ClientConnectorError) as exc:
-            _LOGGER.warning("Connection error for %s", self.host)
-            raise CannotConnect from exc
-
-        if not self._alarm_logged:
-            _LOGGER.warning("Authentication failed for %s (VEDO)", self.host)
-            raise CannotAuthenticate
-
-        return True
+        payload = {"code": self.device_pin}
+        return await self._login(payload, VEDO)
 
     async def get_config(self) -> dict[str, dict[int, ComelitVedoObject]]:
         """Get VEDO system configuration."""
-        reply_json_desc = await self._get_vedo_desc()
+        reply_status, reply_json_desc = await self._get_page_result(
+            "/user/area_desc.json"
+        )
         _LOGGER.debug("Alarm description: %s", reply_json_desc)
-        reply_json_stat = await self._get_vedo_stat()
+        reply_status, reply_json_stat = await self._get_page_result(
+            "/user/area_stat.json"
+        )
         _LOGGER.debug("Alarm statistics: %s", reply_json_stat)
 
         if (reply_json_desc or reply_json_stat) is {}:
@@ -279,7 +285,7 @@ class ComelitVedoApi(ComelitCommonApi):
 
         alarms = {}
         for i in range(MAX_ZONES):
-            if reply_json_desc["description"][i] == "":
+            if not reply_json_desc["p1_pres"][i] and not reply_json_desc["p2_pres"][i]:
                 continue
             vedo = ComelitVedoObject(
                 index=i,
