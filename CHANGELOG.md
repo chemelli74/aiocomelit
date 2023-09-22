@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.0.7 (2023-09-22)
+
+### Fix
+
+* Login (and code optimization) ([#23](https://github.com/chemelli74/aiocomelit/issues/23)) ([`cd16d40`](https://github.com/chemelli74/aiocomelit/commit/cd16d40848285cd24faa8f7ed81d872b338d3848))
+
 ## v0.0.6 (2023-09-05)
 
 ### Fix
