@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.0.8 (2023-09-22)
+
+### Fix
+
+* Logging level ([#24](https://github.com/chemelli74/aiocomelit/issues/24)) ([`8464f94`](https://github.com/chemelli74/aiocomelit/commit/8464f94bd347a75b672c3abf30540b1bea291610))
+
 ## v0.0.7 (2023-09-22)
 
 ### Fix
