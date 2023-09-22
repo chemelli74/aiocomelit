@@ -117,7 +117,7 @@ class ComelitCommonApi:
 
     async def _login(self, payload: dict[str, Any], host_type: str) -> bool:
         """Login into Comelit device."""
-        _LOGGER.info("Logging into host %s [%s]", self.host, host_type)
+        _LOGGER.debug("Logging into host %s [%s]", self.host, host_type)
 
         if self.device_pin:
             cookies = await self._post_page_result("/login.cgi", payload)
