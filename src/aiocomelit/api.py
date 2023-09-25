@@ -115,23 +115,8 @@ class ComelitCommonApi:
 
         return response.cookies
 
-    async def _login(self, payload: dict[str, Any], host_type: str) -> bool:
-        """Login into Comelit device."""
-        _LOGGER.debug("Logging into host %s [%s]", self.host, host_type)
-
-        if self.device_pin:
-            cookies = await self._post_page_result("/login.cgi", payload)
-
-            if not cookies:
-                _LOGGER.warning(
-                    "Authentication failed for host %s [%s]: no cookies received",
-                    self.host,
-                    host_type,
-                )
-                raise CannotAuthenticate
-
-            self._session.cookie_jar.update_cookies(cookies)
-
+    async def _check_logged_in(self, host_type: str) -> bool:
+        """Check if login is active."""
         reply_status, reply_json = await self._get_page_result("/login.json")
 
         if host_type == BRIDGE:
@@ -139,15 +124,36 @@ class ComelitCommonApi:
         else:
             logged = reply_json["logged"] == 1
 
-        if not logged:
+        return logged
+
+    async def _login(self, payload: dict[str, Any], host_type: str) -> bool:
+        """Login into Comelit device."""
+        _LOGGER.debug("Logging into host %s [%s]", self.host, host_type)
+
+        if await self._check_logged_in(BRIDGE):
+            return True
+
+        cookies = await self._post_page_result("/login.cgi", payload)
+
+        if not cookies:
             _LOGGER.warning(
-                "Authentication failed for host %s [%s]: generic error",
+                "Authentication failed for host %s [%s]: no cookies received",
                 self.host,
                 host_type,
             )
             raise CannotAuthenticate
 
-        return True
+        self._session.cookie_jar.update_cookies(cookies)
+
+        if await self._check_logged_in(BRIDGE):
+            return True
+
+        _LOGGER.warning(
+            "Authentication failed for host %s [%s]: generic error",
+            self.host,
+            host_type,
+        )
+        raise CannotAuthenticate
 
     async def logout(self) -> None:
         """Comelit Simple Home logout."""
