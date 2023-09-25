@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.0.9 (2023-09-25)
+
+### Fix
+
+* Improve login with pin ([#25](https://github.com/chemelli74/aiocomelit/issues/25)) ([`87951b7`](https://github.com/chemelli74/aiocomelit/commit/87951b73447e866a92ca2cf4cbc94dcc2126bfb6))
+
 ## v0.0.8 (2023-09-22)
 
 ### Fix
