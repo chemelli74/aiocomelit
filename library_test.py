@@ -57,7 +57,7 @@ async def main() -> None:
         pass
     finally:
         if not logged:
-            print("Unable to login to %s [%s]", BRIDGE, bridge_api.host)
+            print(f"Unable to login to {BRIDGE} [{bridge_api.host}]")
             await bridge_api.close()
             exit(1)
     print("Logged:", logged)
@@ -79,7 +79,6 @@ async def main() -> None:
             await bridge_api.cover_move(device.index, COVER_OPEN)
             print("status after: ", await bridge_api.cover_status(device.index))
             break
-
     print("-" * 20)
     print("Logout & close session")
     await bridge_api.logout()
