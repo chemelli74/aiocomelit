@@ -14,10 +14,12 @@ from .const import (
     COVER,
     COVER_STATUS,
     ERROR_STATUS,
+    IRRIGATION,
     LIGHT,
     LIGHT_ON,
     MAX_ZONES,
     OTHER,
+    SCENARIO,
     SLEEP,
     VEDO,
 )
@@ -234,7 +236,7 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
 
         _LOGGER.debug("Getting all devices for host %s", self.host)
 
-        for dev_type in (CLIMATE, COVER, LIGHT, OTHER):
+        for dev_type in (CLIMATE, COVER, LIGHT, IRRIGATION, OTHER, SCENARIO):
             reply_status, reply_json = await self._get_page_result(
                 f"/user/icon_desc.json?type={dev_type}"
             )
@@ -245,6 +247,9 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
             )
             devices = {}
             for i in range(reply_json["num"]):
+                # Guard against "scenario", that has 32 devices even if none is configured
+                if reply_json["desc"][i] == "":
+                    continue
                 status = reply_json["status"][i]
                 dev_info = ComelitSerialBridgeObject(
                     index=i,
