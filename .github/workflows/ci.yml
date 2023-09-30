@@ -92,7 +92,7 @@ jobs:
         if: github.ref_name != 'main'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          root_options: --noop
+          root_options: --noop -vv
 
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
