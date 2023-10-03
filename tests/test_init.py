@@ -1,6 +1,7 @@
 from aiocomelit.api import (
-    ComeliteSerialBridgeAPi,
+    ComeliteSerialBridgeApi,
     ComelitSerialBridgeObject,
+    ComelitVedoApi,
     ComelitVedoObject,
 )
 from aiocomelit.exceptions import (
@@ -12,10 +13,11 @@ from aiocomelit.exceptions import (
 
 
 def test_objects_can_be_imported():
-    assert ComeliteSerialBridgeAPi
-    assert ComelitSerialBridgeObject
-    assert ComelitVedoObject
-    assert ComelitError
-    assert CannotConnect
-    assert CannotAuthenticate
-    assert CannotRetrieveData
+    assert type(ComeliteSerialBridgeApi)
+    assert type(ComelitSerialBridgeObject)
+    assert type(ComelitVedoApi)
+    assert type(ComelitVedoObject)
+    assert type(ComelitError)
+    assert type(CannotConnect)
+    assert type(CannotAuthenticate)
+    assert type(CannotRetrieveData)

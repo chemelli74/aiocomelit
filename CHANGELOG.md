@@ -2,6 +2,24 @@
 
 <!--next-version-placeholder-->
 
+## v0.0.9 (2023-09-25)
+
+### Fix
+
+* Improve login with pin ([#25](https://github.com/chemelli74/aiocomelit/issues/25)) ([`87951b7`](https://github.com/chemelli74/aiocomelit/commit/87951b73447e866a92ca2cf4cbc94dcc2126bfb6))
+
+## v0.0.8 (2023-09-22)
+
+### Fix
+
+* Logging level ([#24](https://github.com/chemelli74/aiocomelit/issues/24)) ([`8464f94`](https://github.com/chemelli74/aiocomelit/commit/8464f94bd347a75b672c3abf30540b1bea291610))
+
+## v0.0.7 (2023-09-22)
+
+### Fix
+
+* Login (and code optimization) ([#23](https://github.com/chemelli74/aiocomelit/issues/23)) ([`cd16d40`](https://github.com/chemelli74/aiocomelit/commit/cd16d40848285cd24faa8f7ed81d872b338d3848))
+
 ## v0.0.6 (2023-09-05)
 
 ### Fix

@@ -1,6 +1,11 @@
-__version__ = "0.0.6"
+__version__ = "0.0.9"
 
-from .api import ComeliteSerialBridgeAPi, ComelitSerialBridgeObject, ComelitVedoObject
+from .api import (
+    ComeliteSerialBridgeApi,
+    ComelitSerialBridgeObject,
+    ComelitVedoApi,
+    ComelitVedoObject,
+)
 from .exceptions import (
     CannotAuthenticate,
     CannotConnect,
@@ -9,8 +14,9 @@ from .exceptions import (
 )
 
 __all__ = [
-    "ComeliteSerialBridgeAPi",
+    "ComeliteSerialBridgeApi",
     "ComelitSerialBridgeObject",
+    "ComelitVedoApi",
     "ComelitVedoObject",
     "ComelitError",
     "CannotConnect",
