@@ -1,12 +1,12 @@
 """Support for Comelit SimpleHome."""
 import asyncio
-import re
 from dataclasses import dataclass
 from datetime import datetime
 from http.cookies import SimpleCookie
 from typing import Any
 
 import aiohttp
+import pint
 
 from .const import (
     _LOGGER,
@@ -254,18 +254,20 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
                     "/user/counter.json"
                 )
             devices = {}
+            ureg = pint.UnitRegistry()
+            ureg.default_format = "~"
             for i in range(reply_json["num"]):
                 # Guard against "scenario", that has 32 devices even if none is configured
                 if reply_json["desc"][i] == "":
                     continue
                 status = reply_json["status"][i]
-                power: float = 0
+                power = 0.0
                 power_unit = ""
-                if instant := reply_counter_json.get("instant"):
-                    if digit_match := re.findall("[0-9.]+", instant):
-                        power = float(digit_match[0])
-                    if word_match := re.findall("[a-zA-Z]+", instant):
-                        power_unit = word_match[0]
+                if instant_values := reply_counter_json.get("instant"):
+                    instant = ureg(instant_values[i])
+                    if not instant.dimensionless:
+                        power = instant.magnitude
+                        power_unit = str(instant.units)
                 dev_info = ComelitSerialBridgeObject(
                     index=i,
                     name=reply_json["desc"][i],
