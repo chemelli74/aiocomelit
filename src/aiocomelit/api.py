@@ -1,5 +1,6 @@
 """Support for Comelit SimpleHome."""
 import asyncio
+import re
 from dataclasses import dataclass
 from datetime import datetime
 from http.cookies import SimpleCookie
@@ -38,6 +39,8 @@ class ComelitSerialBridgeObject:
     val: int | dict[Any, Any]  # Temperature or Humidity (CLIMATE)
     protected: int
     zone: str
+    power: float
+    power_unit: str
 
 
 @dataclass
@@ -245,12 +248,24 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
                 dev_type,
                 reply_json,
             )
+            reply_counter_json: dict[str, Any] = {}
+            if dev_type == OTHER and reply_json["num"] > 0:
+                reply_status, reply_counter_json = await self._get_page_result(
+                    "/user/counter.json"
+                )
             devices = {}
             for i in range(reply_json["num"]):
                 # Guard against "scenario", that has 32 devices even if none is configured
                 if reply_json["desc"][i] == "":
                     continue
                 status = reply_json["status"][i]
+                power: float = 0
+                power_unit = ""
+                if instant := reply_counter_json.get("instant"):
+                    if digit_match := re.findall("[0-9.]+", instant):
+                        power = float(digit_match[0])
+                    if word_match := re.findall("[a-zA-Z]+", instant):
+                        power_unit = word_match[0]
                 dev_info = ComelitSerialBridgeObject(
                     index=i,
                     name=reply_json["desc"][i],
@@ -259,7 +274,11 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
                     type=dev_type,
                     val=reply_json["val"][i],
                     protected=reply_json["protected"][i],
-                    zone=reply_json["env_desc"][reply_json["env"][i]],
+                    zone=reply_json["env_desc"][reply_json["env"][i]]
+                    if not dev_type == SCENARIO
+                    else "",
+                    power=power,
+                    power_unit=power_unit,
                 )
                 devices.update({i: dev_info})
             self._devices.update({dev_type: devices})
