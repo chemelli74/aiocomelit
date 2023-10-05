@@ -30,3 +30,6 @@ MAX_ZONES = 8
 
 # Min time between updates
 SLEEP = 0.5
+
+# DEFAULT POWER UNIT
+WATT = "W"

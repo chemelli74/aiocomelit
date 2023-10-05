@@ -23,6 +23,7 @@ from .const import (
     SCENARIO,
     SLEEP,
     VEDO,
+    WATT,
 )
 from .exceptions import CannotAuthenticate, CannotConnect
 
@@ -40,7 +41,7 @@ class ComelitSerialBridgeObject:
     protected: int
     zone: str
     power: float
-    power_unit: str
+    power_unit: str = WATT
 
 
 @dataclass
@@ -262,12 +263,12 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
                     continue
                 status = reply_json["status"][i]
                 power = 0.0
-                power_unit = ""
                 if instant_values := reply_counter_json.get("instant"):
                     instant = ureg(instant_values[i])
                     if not instant.dimensionless:
-                        power = instant.magnitude
-                        power_unit = str(instant.units)
+                        power = ureg.convert(
+                            instant.magnitude, str(instant.units), WATT
+                        )
                 dev_info = ComelitSerialBridgeObject(
                     index=i,
                     name=reply_json["desc"][i],
@@ -280,7 +281,6 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
                     if not dev_type == SCENARIO
                     else "",
                     power=power,
-                    power_unit=power_unit,
                 )
                 devices.update({i: dev_info})
             self._devices.update({dev_type: devices})
