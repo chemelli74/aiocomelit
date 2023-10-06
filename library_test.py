@@ -116,7 +116,7 @@ async def main() -> None:
         pass
     finally:
         if not logged:
-            print("Unable to login to %s[%s]", VEDO, vedo_api.host)
+            print(f"Unable to login to {VEDO} [{vedo_api.host}]")
             await vedo_api.close()
             exit(1)
     print("Logged:", logged)
