@@ -8,10 +8,12 @@ BRIDGE = "Serial bridge"
 VEDO = "Vedo system"
 
 # Device types
-COVER = "shutter"
-LIGHT = "light"
 CLIMATE = "clima"
+COVER = "shutter"
+IRRIGATION = "irrigation"
+LIGHT = "light"
 OTHER = "other"
+SCENARIO = "scenario"
 
 # Statuses
 ERROR_STATUS = -1
@@ -28,3 +30,6 @@ MAX_ZONES = 8
 
 # Min time between updates
 SLEEP = 0.5
+
+# DEFAULT POWER UNIT
+WATT = "W"

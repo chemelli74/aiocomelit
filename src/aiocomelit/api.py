@@ -6,6 +6,7 @@ from http.cookies import SimpleCookie
 from typing import Any
 
 import aiohttp
+import pint
 
 from .const import (
     _LOGGER,
@@ -14,12 +15,15 @@ from .const import (
     COVER,
     COVER_STATUS,
     ERROR_STATUS,
+    IRRIGATION,
     LIGHT,
     LIGHT_ON,
     MAX_ZONES,
     OTHER,
+    SCENARIO,
     SLEEP,
     VEDO,
+    WATT,
 )
 from .exceptions import CannotAuthenticate, CannotConnect
 
@@ -36,6 +40,8 @@ class ComelitSerialBridgeObject:
     val: int | dict[Any, Any]  # Temperature or Humidity (CLIMATE)
     protected: int
     zone: str
+    power: float
+    power_unit: str = WATT
 
 
 @dataclass
@@ -172,7 +178,15 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
         super().__init__(host, bridge_pin)
         self._devices: dict[str, dict[int, ComelitSerialBridgeObject]] = {}
 
-    async def _set_device_status(
+    async def _translate_device_status(self, dev_type: str, dev_status: int) -> str:
+        """Makes status human readable."""
+
+        if dev_type == COVER:
+            return COVER_STATUS[dev_status]
+
+        return "on" if dev_status == LIGHT_ON else "off"
+
+    async def set_device_status(
         self, device_type: str, index: int, action: int
     ) -> bool:
         """Set device action.
@@ -184,9 +198,9 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
         )
         return reply_status == 200
 
-    async def _get_device_status(self, device_type: str, index: int) -> int:
+    async def get_device_status(self, device_type: str, index: int) -> int:
         """Get device status, -1 means API call failed."""
-
+        await asyncio.sleep(SLEEP)
         reply_status, reply_json = await self._get_page_result(
             f"/user/icon_status.json?type={device_type}"
         )
@@ -198,43 +212,17 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
         )
         return reply_json["status"][index]
 
-    async def _translate_device_status(self, dev_type: str, dev_status: int) -> str:
-        """Makes status human readable."""
-
-        if dev_type == COVER:
-            return COVER_STATUS[dev_status]
-
-        return "on" if dev_status == LIGHT_ON else "off"
-
     async def login(self) -> bool:
         """Login to Serial Bridge device."""
         payload = {"dom": self.device_pin}
         return await self._login(payload, BRIDGE)
-
-    async def light_switch(self, index: int, action: int) -> bool:
-        """Set status of the light."""
-        return await self._set_device_status(LIGHT, index, action)
-
-    async def light_status(self, index: int) -> int:
-        """Get status of the light."""
-        await asyncio.sleep(SLEEP)
-        return await self._get_device_status(LIGHT, index)
-
-    async def cover_move(self, index: int, action: int) -> bool:
-        """Move cover up/down."""
-        return await self._set_device_status(COVER, index, action)
-
-    async def cover_status(self, index: int) -> int:
-        """Get cover status."""
-        await asyncio.sleep(SLEEP)
-        return await self._get_device_status(COVER, index)
 
     async def get_all_devices(self) -> dict[str, dict[int, ComelitSerialBridgeObject]]:
         """Get all connected devices."""
 
         _LOGGER.debug("Getting all devices for host %s", self.host)
 
-        for dev_type in (CLIMATE, COVER, LIGHT, OTHER):
+        for dev_type in (CLIMATE, COVER, LIGHT, IRRIGATION, OTHER, SCENARIO):
             reply_status, reply_json = await self._get_page_result(
                 f"/user/icon_desc.json?type={dev_type}"
             )
@@ -243,9 +231,26 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
                 dev_type,
                 reply_json,
             )
+            reply_counter_json: dict[str, Any] = {}
+            if dev_type == OTHER and reply_json["num"] > 0:
+                reply_status, reply_counter_json = await self._get_page_result(
+                    "/user/counter.json"
+                )
             devices = {}
+            ureg = pint.UnitRegistry()
+            ureg.default_format = "~"
             for i in range(reply_json["num"]):
+                # Guard against "scenario", that has 32 devices even if none is configured
+                if reply_json["desc"][i] == "":
+                    continue
                 status = reply_json["status"][i]
+                power = 0.0
+                if instant_values := reply_counter_json.get("instant"):
+                    instant = ureg(instant_values[i])
+                    if not instant.dimensionless:
+                        power = ureg.convert(
+                            instant.magnitude, str(instant.units), WATT
+                        )
                 dev_info = ComelitSerialBridgeObject(
                     index=i,
                     name=reply_json["desc"][i],
@@ -254,7 +259,10 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
                     type=dev_type,
                     val=reply_json["val"][i],
                     protected=reply_json["protected"][i],
-                    zone=reply_json["env_desc"][reply_json["env"][i]],
+                    zone=reply_json["env_desc"][reply_json["env"][i]]
+                    if not dev_type == SCENARIO
+                    else "",
+                    power=power,
                 )
                 devices.update({i: dev_info})
             self._devices.update({dev_type: devices})
