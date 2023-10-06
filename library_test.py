@@ -3,9 +3,16 @@ import argparse
 import asyncio
 import logging
 
-from aiocomelit.api import ComeliteSerialBridgeApi, ComelitVedoApi
-from aiocomelit.const import BRIDGE, COVER, COVER_OPEN, LIGHT, LIGHT_ON, VEDO
+from aiocomelit.api import (
+    ComeliteSerialBridgeApi,
+    ComelitSerialBridgeObject,
+    ComelitVedoApi,
+)
+from aiocomelit.const import BRIDGE, COVER, IRRIGATION, LIGHT, OTHER, VEDO
 from aiocomelit.exceptions import CannotAuthenticate, CannotConnect
+
+GENERIC_ON = 1
+INDEX = 1
 
 
 def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
@@ -44,6 +51,17 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
     return parser, arguments
 
 
+async def execute_test(
+    api: ComeliteSerialBridgeApi, device: ComelitSerialBridgeObject, dev_type: str
+) -> None:
+    """Execute a test routine on a specific device type."""
+
+    print(f"Test {dev_type} device: {device.name}")
+    print("Status before: ", await api.get_device_status(dev_type, device.index))
+    await api.set_device_status(dev_type, device.index, GENERIC_ON)
+    print("Status after: ", await api.get_device_status(dev_type, device.index))
+
+
 async def main() -> None:
     """Run main."""
     parser, args = get_arguments()
@@ -66,18 +84,20 @@ async def main() -> None:
     print("Devices:", devices)
     print("-" * 20)
     for device in devices[LIGHT].values():
-        if device.index == 1:
-            print("Test light switch on:", device.name)
-            print("status before: ", await bridge_api.light_status(device.index))
-            await bridge_api.light_switch(device.index, LIGHT_ON)
-            print("status after: ", await bridge_api.light_status(device.index))
+        if device.index == INDEX:
+            await execute_test(bridge_api, device, LIGHT)
             break
     for device in devices[COVER].values():
-        if device.index == 1:
-            print("Test cover  open  on:", device.name)
-            print("status before: ", await bridge_api.cover_status(device.index))
-            await bridge_api.cover_move(device.index, COVER_OPEN)
-            print("status after: ", await bridge_api.cover_status(device.index))
+        if device.index == INDEX:
+            await execute_test(bridge_api, device, COVER)
+            break
+    for device in devices[IRRIGATION].values():
+        if device.index == INDEX:
+            await execute_test(bridge_api, device, IRRIGATION)
+            break
+    for device in devices[OTHER].values():
+        if device.index == INDEX:
+            await execute_test(bridge_api, device, OTHER)
             break
 
     print("-" * 20)

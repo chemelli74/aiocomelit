@@ -178,7 +178,15 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
         super().__init__(host, bridge_pin)
         self._devices: dict[str, dict[int, ComelitSerialBridgeObject]] = {}
 
-    async def _set_device_status(
+    async def _translate_device_status(self, dev_type: str, dev_status: int) -> str:
+        """Makes status human readable."""
+
+        if dev_type == COVER:
+            return COVER_STATUS[dev_status]
+
+        return "on" if dev_status == LIGHT_ON else "off"
+
+    async def set_device_status(
         self, device_type: str, index: int, action: int
     ) -> bool:
         """Set device action.
@@ -190,9 +198,9 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
         )
         return reply_status == 200
 
-    async def _get_device_status(self, device_type: str, index: int) -> int:
+    async def get_device_status(self, device_type: str, index: int) -> int:
         """Get device status, -1 means API call failed."""
-
+        await asyncio.sleep(SLEEP)
         reply_status, reply_json = await self._get_page_result(
             f"/user/icon_status.json?type={device_type}"
         )
@@ -204,36 +212,10 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
         )
         return reply_json["status"][index]
 
-    async def _translate_device_status(self, dev_type: str, dev_status: int) -> str:
-        """Makes status human readable."""
-
-        if dev_type == COVER:
-            return COVER_STATUS[dev_status]
-
-        return "on" if dev_status == LIGHT_ON else "off"
-
     async def login(self) -> bool:
         """Login to Serial Bridge device."""
         payload = {"dom": self.device_pin}
         return await self._login(payload, BRIDGE)
-
-    async def light_switch(self, index: int, action: int) -> bool:
-        """Set status of the light."""
-        return await self._set_device_status(LIGHT, index, action)
-
-    async def light_status(self, index: int) -> int:
-        """Get status of the light."""
-        await asyncio.sleep(SLEEP)
-        return await self._get_device_status(LIGHT, index)
-
-    async def cover_move(self, index: int, action: int) -> bool:
-        """Move cover up/down."""
-        return await self._set_device_status(COVER, index, action)
-
-    async def cover_status(self, index: int) -> int:
-        """Get cover status."""
-        await asyncio.sleep(SLEEP)
-        return await self._get_device_status(COVER, index)
 
     async def get_all_devices(self) -> dict[str, dict[int, ComelitSerialBridgeObject]]:
         """Get all connected devices."""
