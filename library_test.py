@@ -3,6 +3,7 @@ import argparse
 import asyncio
 import logging
 
+from aiocomelit import __version__
 from aiocomelit.api import (
     ComeliteSerialBridgeApi,
     ComelitSerialBridgeObject,
@@ -66,6 +67,8 @@ async def main() -> None:
     """Run main."""
     parser, args = get_arguments()
 
+    print("-" * 20)
+    print(f"aiocomelit version: {__version__}")
     print("-" * 20)
     bridge_api = ComeliteSerialBridgeApi(args.bridge, args.bridge_pin)
     logged = False

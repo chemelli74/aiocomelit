@@ -125,6 +125,7 @@ class ComelitCommonApi:
         """Check if login is active."""
         reply_status, reply_json = await self._get_page_result("/login.json")
 
+        _LOGGER.debug("%s login reply: %s", host_type, reply_json)
         if host_type == BRIDGE:
             logged = reply_json["domus"] != "000000000000"
         else:
