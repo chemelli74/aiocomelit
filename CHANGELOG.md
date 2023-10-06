@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.0 (2023-10-06)
+
+### Feature
+
+* Add irrigation and scenario devices ([#29](https://github.com/chemelli74/aiocomelit/issues/29)) ([`fd8c461`](https://github.com/chemelli74/aiocomelit/commit/fd8c46159af2c381bbe96c9c4a498b2d911cc31c))
+
 ## v0.0.9 (2023-09-25)
 
 ### Fix
