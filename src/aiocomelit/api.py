@@ -163,6 +163,8 @@ class ComelitCommonApi:
 
     async def logout(self) -> None:
         """Comelit Simple Home logout."""
+        payload = {"logout": 1}
+        await self._post_page_result("/login.cgi", payload)
         self._session.cookie_jar.clear()
 
     async def close(self) -> None:
