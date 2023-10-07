@@ -66,11 +66,11 @@ class ComelitVedoObject:
 class ComelitCommonApi:
     """Common API calls for Comelit SimpleHome devices."""
 
-    def __init__(self, host: str, pin: int) -> None:
+    def __init__(self, host: str, port: int, pin: int) -> None:
         """Initialize the session."""
-        self.host = host
+        self.host = f"{host}:{port}"
         self.device_pin = pin
-        self.base_url = f"http://{self.host}"
+        self.base_url = f"http://{host}:{port}"
         self._headers = {
             "User-Agent": "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
@@ -176,9 +176,9 @@ class ComelitCommonApi:
 class ComeliteSerialBridgeApi(ComelitCommonApi):
     """Queries Comelit SimpleHome Serial bridge."""
 
-    def __init__(self, host: str, bridge_pin: int) -> None:
+    def __init__(self, host: str, port: int, bridge_pin: int) -> None:
         """Initialize the session."""
-        super().__init__(host, bridge_pin)
+        super().__init__(host, port, bridge_pin)
         self._devices: dict[str, dict[int, ComelitSerialBridgeObject]] = {}
 
     async def _translate_device_status(self, dev_type: str, dev_status: int) -> str:
@@ -276,9 +276,9 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
 class ComelitVedoApi(ComelitCommonApi):
     """Queries Comelit SimpleHome VEDO alarm."""
 
-    def __init__(self, host: str, alarm_pin: int) -> None:
+    def __init__(self, host: str, port: int, alarm_pin: int) -> None:
         """Initialize the VEDO session."""
-        super().__init__(host, alarm_pin)
+        super().__init__(host, port, alarm_pin)
         self._alarm: dict[str, dict[int, ComelitVedoObject]] = {}
 
     async def login(self) -> bool:

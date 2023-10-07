@@ -27,6 +27,13 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
         help="Set Serial bridge IP address",
     )
     parser.add_argument(
+        "--bridge_port",
+        "-bport",
+        type=str,
+        default=80,
+        help="Set Serial bridge http port",
+    )
+    parser.add_argument(
         "--bridge_pin",
         "-bp",
         type=str,
@@ -39,6 +46,13 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
         type=str,
         default="192.168.1.230",
         help="Set VEDO system IP address",
+    )
+    parser.add_argument(
+        "--vedo_port",
+        "-vport",
+        type=str,
+        default=80,
+        help="Set VEDO system http port",
     )
     parser.add_argument(
         "--vedo_pin",
@@ -70,7 +84,7 @@ async def main() -> None:
     print("-" * 20)
     print(f"aiocomelit version: {__version__}")
     print("-" * 20)
-    bridge_api = ComeliteSerialBridgeApi(args.bridge, args.bridge_pin)
+    bridge_api = ComeliteSerialBridgeApi(args.bridge, args.bridge_port, args.bridge_pin)
     logged = False
     try:
         logged = await bridge_api.login()
@@ -111,7 +125,7 @@ async def main() -> None:
     if not args.vedo_pin:
         return
 
-    vedo_api = ComelitVedoApi(args.vedo, args.vedo_pin)
+    vedo_api = ComelitVedoApi(args.vedo, args.vedo_port, args.vedo_pin)
     logged = False
     try:
         logged = await vedo_api.login()
