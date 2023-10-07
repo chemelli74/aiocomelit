@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.2 (2023-10-07)
+
+### Fix
+
+* Variable in _login() ([#32](https://github.com/chemelli74/aiocomelit/issues/32)) ([`9820838`](https://github.com/chemelli74/aiocomelit/commit/9820838d95cd925c803150f0b3559058a6b8e08c))
+
 ## v0.1.1 (2023-10-07)
 
 ### Fix
