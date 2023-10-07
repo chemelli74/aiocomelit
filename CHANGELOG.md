@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.2.0 (2023-10-07)
+
+### Feature
+
+* Add http port parametrization ([#34](https://github.com/chemelli74/aiocomelit/issues/34)) ([`49540a2`](https://github.com/chemelli74/aiocomelit/commit/49540a298e10b502f159c638918d610a26194348))
+
 ## v0.1.2 (2023-10-07)
 
 ### Fix
