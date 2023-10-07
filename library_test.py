@@ -3,6 +3,7 @@ import argparse
 import asyncio
 import logging
 
+from aiocomelit import __version__
 from aiocomelit.api import (
     ComeliteSerialBridgeApi,
     ComelitSerialBridgeObject,
@@ -67,6 +68,8 @@ async def main() -> None:
     parser, args = get_arguments()
 
     print("-" * 20)
+    print(f"aiocomelit version: {__version__}")
+    print("-" * 20)
     bridge_api = ComeliteSerialBridgeApi(args.bridge, args.bridge_pin)
     logged = False
     try:
@@ -116,7 +119,7 @@ async def main() -> None:
         pass
     finally:
         if not logged:
-            print("Unable to login to %s[%s]", VEDO, vedo_api.host)
+            print(f"Unable to login to {VEDO} [{vedo_api.host}]")
             await vedo_api.close()
             exit(1)
     print("Logged:", logged)

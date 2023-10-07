@@ -125,6 +125,7 @@ class ComelitCommonApi:
         """Check if login is active."""
         reply_status, reply_json = await self._get_page_result("/login.json")
 
+        _LOGGER.debug("%s login reply: %s", host_type, reply_json)
         if host_type == BRIDGE:
             logged = reply_json["domus"] != "000000000000"
         else:
@@ -136,7 +137,7 @@ class ComelitCommonApi:
         """Login into Comelit device."""
         _LOGGER.debug("Logging into host %s [%s]", self.host, host_type)
 
-        if await self._check_logged_in(BRIDGE):
+        if await self._check_logged_in(host_type):
             return True
 
         cookies = await self._post_page_result("/login.cgi", payload)
@@ -151,7 +152,7 @@ class ComelitCommonApi:
 
         self._session.cookie_jar.update_cookies(cookies)
 
-        if await self._check_logged_in(BRIDGE):
+        if await self._check_logged_in(host_type):
             return True
 
         _LOGGER.warning(
