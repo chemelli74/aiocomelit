@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.1 (2023-10-07)
+
+### Fix
+
+* Logout() ([#33](https://github.com/chemelli74/aiocomelit/issues/33)) ([`5595e39`](https://github.com/chemelli74/aiocomelit/commit/5595e3996fc9fbca4a15c3ed5e92293d6604c3a1))
+
 ## v0.1.0 (2023-10-06)
 
 ### Feature
