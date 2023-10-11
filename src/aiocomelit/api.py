@@ -13,15 +13,15 @@ from .const import (
     BRIDGE,
     CLIMATE,
     COVER,
-    COVER_STATUS,
-    ERROR_STATUS,
     IRRIGATION,
     LIGHT,
-    LIGHT_ON,
     MAX_ZONES,
     OTHER,
     SCENARIO,
     SLEEP,
+    STATE_COVER,
+    STATE_ERROR,
+    STATE_ON,
     VEDO,
     WATT,
 )
@@ -185,16 +185,19 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
         """Makes status human readable."""
 
         if dev_type == COVER:
-            return COVER_STATUS[dev_status]
+            return STATE_COVER[dev_status]
 
-        return "on" if dev_status == LIGHT_ON else "off"
+        return "on" if dev_status == STATE_ON else "off"
 
     async def set_device_status(
         self, device_type: str, index: int, action: int
     ) -> bool:
         """Set device action.
-        0 = off/close
-        1 = on/open
+
+        action:
+            0 = off/close
+            1 = on/open
+
         """
         reply_status = await self._get_page_result(
             f"/user/action.cgi?type={device_type}&num{action}={index}", False
@@ -208,10 +211,10 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
             f"/user/icon_status.json?type={device_type}"
         )
         if reply_status != 200:
-            return ERROR_STATUS
+            return STATE_ERROR
 
         _LOGGER.debug(
-            "Device %s[%s] status: %s", device_type, index, reply_json["status"]
+            "Device %s[%s] status: %s", device_type, index, reply_json["status"][index]
         )
         return reply_json["status"][index]
 
