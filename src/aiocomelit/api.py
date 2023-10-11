@@ -10,12 +10,13 @@ import pint
 
 from .const import (
     _LOGGER,
+    ALARM_FIELDS,
+    ALARM_MAX_ZONES,
     BRIDGE,
     CLIMATE,
     COVER,
     IRRIGATION,
     LIGHT,
-    MAX_ZONES,
     OTHER,
     SCENARIO,
     SLEEP,
@@ -284,6 +285,52 @@ class ComelitVedoApi(ComelitCommonApi):
         super().__init__(host, port, alarm_pin)
         self._alarm: dict[str, dict[int, ComelitVedoObject]] = {}
 
+    async def _translate_zone_status(self, zone: ComelitVedoObject) -> str:
+        """Translate Zone status."""
+
+        for field in ALARM_FIELDS.keys():
+            if getattr(zone, field):
+                return ALARM_FIELDS[field]
+
+        return "disabled"
+
+    async def set_zone_status(self, index: int, action: str) -> bool:
+        """Set zone action.
+
+        action:
+            tot = enable
+            dis = disable
+
+        index:
+            32 = all zones
+             n = specific zone
+
+        """
+        reply_status = await self._get_page_result(
+            f"/action.cgi?vedo=1&{action}={index}", False
+        )
+        return reply_status == 200
+
+    async def get_zone_status(self, index: int) -> str | None:
+        """Get device status, -1 means API call failed."""
+        await asyncio.sleep(SLEEP * 2)
+        reply_status, reply_json = await self._get_page_result("/user/area_stat.json")
+        if reply_status != 200:
+            return None
+
+        zone = self._alarm["alarm"][index]
+
+        status = await self._translate_zone_status(zone)
+        _LOGGER.debug(zone)
+        _LOGGER.debug(
+            "Zone %s[%s] status: %s, events memory: %s",
+            zone.name,
+            zone.index,
+            status,
+            bool(zone.alarm_memory),
+        )
+        return status
+
     async def login(self) -> bool:
         """Login to VEDO system."""
         payload = {"code": self.device_pin}
@@ -304,8 +351,8 @@ class ComelitVedoApi(ComelitCommonApi):
             return {}
 
         alarms = {}
-        for i in range(MAX_ZONES):
-            if not reply_json_desc["p1_pres"][i] and not reply_json_desc["p2_pres"][i]:
+        for i in range(ALARM_MAX_ZONES):
+            if not reply_json_desc["present"][i]:
                 continue
             vedo = ComelitVedoObject(
                 index=i,

@@ -21,8 +21,19 @@ STATE_ERROR = -1
 STATE_OFF = 0
 STATE_ON = 1
 
-# Maximum number of zones for a VEDO alarm device
-MAX_ZONES = 8
+# Alarm specific
+ALARM_DISABLE = "dis"
+ALARM_ENABLE = "tot"
+ALARM_FIELDS: dict[str, str] = {
+    "out_time": "arming",
+    "in_time": "disarming",
+    "anomaly": "anomaly",
+    "sabotage": "sabotage",
+    "alarm": "alarm",
+    "armed": "armed",
+    "ready": "ready",
+}
+ALARM_MAX_ZONES = 8
 
 # Min time between updates
 SLEEP = 0.5
