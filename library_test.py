@@ -1,5 +1,6 @@
 """Test script for aiocomelit library."""
 import argparse
+import ast
 import asyncio
 import logging
 
@@ -60,6 +61,13 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
         default="",
         help="Set VEDO system pin",
     )
+    parser.add_argument(
+        "--test",
+        "-t",
+        type=ast.literal_eval,
+        default=True,
+        help="Execute test actions",
+    )
     arguments = parser.parse_args()
 
     return parser, arguments
@@ -99,23 +107,24 @@ async def main() -> None:
     devices = await bridge_api.get_all_devices()
     print("Devices:", devices)
     print("-" * 20)
-    for device in devices[LIGHT].values():
-        if device.index == INDEX:
-            await execute_device_test(bridge_api, device, LIGHT)
-            break
-    for device in devices[COVER].values():
-        if device.index == INDEX:
-            await execute_device_test(bridge_api, device, COVER)
-            break
-    for device in devices[IRRIGATION].values():
-        if device.index == INDEX:
-            await execute_device_test(bridge_api, device, IRRIGATION)
-            break
-    for device in devices[OTHER].values():
-        if device.index == INDEX:
-            await execute_device_test(bridge_api, device, OTHER)
-            break
-    print("-" * 20)
+    if args.test:
+        for device in devices[LIGHT].values():
+            if device.index == INDEX:
+                await execute_device_test(bridge_api, device, LIGHT)
+                break
+        for device in devices[COVER].values():
+            if device.index == INDEX:
+                await execute_device_test(bridge_api, device, COVER)
+                break
+        for device in devices[IRRIGATION].values():
+            if device.index == INDEX:
+                await execute_device_test(bridge_api, device, IRRIGATION)
+                break
+        for device in devices[OTHER].values():
+            if device.index == INDEX:
+                await execute_device_test(bridge_api, device, OTHER)
+                break
+        print("-" * 20)
     print("Logout & close session")
     await bridge_api.logout()
     await bridge_api.close()
