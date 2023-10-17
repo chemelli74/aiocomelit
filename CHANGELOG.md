@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.3.0 (2023-10-17)
+
+### Feature
+
+* Alarm VEDO full support ([#39](https://github.com/chemelli74/aiocomelit/issues/39)) ([`61b6ac2`](https://github.com/chemelli74/aiocomelit/commit/61b6ac2ab38a1ff79a40b7214c2425fd14577380))
+
 ## v0.2.0 (2023-10-07)
 
 ### Feature
