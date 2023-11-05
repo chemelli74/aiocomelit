@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.3.1 (2023-11-05)
+
+### Fix
+
+* Updated headers for new fw versions ([#46](https://github.com/chemelli74/aiocomelit/issues/46)) ([`1dd99c4`](https://github.com/chemelli74/aiocomelit/commit/1dd99c441f91bf28c83a0fa39ac5f46c38d915ae))
+
 ## v0.3.0 (2023-10-17)
 
 ### Feature
