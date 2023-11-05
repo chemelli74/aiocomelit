@@ -74,10 +74,8 @@ class ComelitCommonApi:
         self.base_url = f"http://{host}:{port}"
         self._headers = {
             "User-Agent": "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
             "Accept-Language": "en-GB,en;q=0.5",
-            "Origin": self.base_url,
-            "Referer": f"{self.base_url}/",
+            "X-Requested-With": "XMLHttpRequest",
         }
         jar = aiohttp.CookieJar(unsafe=True)
         self._session = aiohttp.ClientSession(cookie_jar=jar)
