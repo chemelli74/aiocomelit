@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.3.2 (2023-11-09)
+
+### Fix
+
+* Alarm management ([#49](https://github.com/chemelli74/aiocomelit/issues/49)) ([`64da301`](https://github.com/chemelli74/aiocomelit/commit/64da301ffade967b99f9e8ad750a0363bc23d0a8))
+
 ## v0.3.1 (2023-11-05)
 
 ### Fix
