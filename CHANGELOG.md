@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.4.0 (2023-11-09)
+
+### Feature
+
+* Add more logging ([#50](https://github.com/chemelli74/aiocomelit/issues/50)) ([`70347fe`](https://github.com/chemelli74/aiocomelit/commit/70347fe92c3f315a4935aad71c8111891ac7b80a))
+
 ## v0.3.2 (2023-11-09)
 
 ### Fix
