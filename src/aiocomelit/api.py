@@ -26,7 +26,7 @@ from .const import (
     VEDO,
     WATT,
 )
-from .exceptions import CannotAuthenticate, CannotConnect
+from .exceptions import CannotAuthenticate, CannotConnect, CannotRetrieveData
 
 
 @dataclass
@@ -53,7 +53,6 @@ class ComelitVedoObject:
     name: str
     p1: bool
     p2: bool
-    zone_open: int
     ready: bool
     armed: bool
     alarm: bool
@@ -62,6 +61,7 @@ class ComelitVedoObject:
     anomaly: bool
     in_time: bool
     out_time: bool
+    human_status: str
 
 
 class ComelitCommonApi:
@@ -281,7 +281,7 @@ class ComelitVedoApi(ComelitCommonApi):
     def __init__(self, host: str, port: int, alarm_pin: int) -> None:
         """Initialize the VEDO session."""
         super().__init__(host, port, alarm_pin)
-        self._alarm: dict[str, dict[int, ComelitVedoObject]] = {}
+        self._json_desc: dict[str, Any] = {}
 
     async def _translate_zone_status(self, zone: ComelitVedoObject) -> str:
         """Translate Zone status."""
@@ -309,65 +309,54 @@ class ComelitVedoApi(ComelitCommonApi):
         )
         return reply_status == 200
 
-    async def get_zone_status(self, index: int) -> str | None:
-        """Get device status, -1 means API call failed."""
+    async def get_zone_status(self, index: int) -> ComelitVedoObject:
+        """Get zone status."""
         await asyncio.sleep(SLEEP * 2)
         reply_status, reply_json = await self._get_page_result("/user/area_stat.json")
         if reply_status != 200:
-            return None
+            raise CannotRetrieveData
 
-        zone = self._alarm["alarm"][index]
+        _LOGGER.debug("Alarm statistics: %s", reply_json)
 
-        status = await self._translate_zone_status(zone)
-        _LOGGER.debug(zone)
-        _LOGGER.debug(
-            "Zone %s[%s] status: %s, events memory: %s",
-            zone.name,
-            zone.index,
-            status,
-            bool(zone.alarm_memory),
+        vedo = ComelitVedoObject(
+            index=index,
+            name=self._json_desc["description"][index],
+            p1=self._json_desc["p1_pres"][index],
+            p2=self._json_desc["p2_pres"][index],
+            ready=reply_json["ready"][index],
+            armed=reply_json["armed"][index],
+            alarm=reply_json["alarm"][index],
+            alarm_memory=reply_json["alarm_memory"][index],
+            sabotage=reply_json["sabotage"][index],
+            anomaly=reply_json["anomaly"][index],
+            in_time=reply_json["in_time"][index],
+            out_time=reply_json["out_time"][index],
+            human_status="",
         )
-        return status
+        vedo.human_status = await self._translate_zone_status(vedo)
+        _LOGGER.debug(vedo)
+        return vedo
 
     async def login(self) -> bool:
         """Login to VEDO system."""
         payload = {"code": self.device_pin}
         return await self._login(payload, VEDO)
 
-    async def get_config(self) -> dict[str, dict[int, ComelitVedoObject]]:
-        """Get VEDO system configuration."""
+    async def get_config_and_status(
+        self,
+    ) -> dict[str, dict[int, ComelitVedoObject]]:
+        """Get VEDO system configuration and status."""
         reply_status, reply_json_desc = await self._get_page_result(
             "/user/area_desc.json"
         )
         _LOGGER.debug("Alarm description: %s", reply_json_desc)
-        reply_status, reply_json_stat = await self._get_page_result(
-            "/user/area_stat.json"
-        )
-        _LOGGER.debug("Alarm statistics: %s", reply_json_stat)
-
-        if (reply_json_desc or reply_json_stat) is {}:
-            return {}
+        self._json_desc = reply_json_desc
 
         alarms = {}
         for i in range(ALARM_MAX_ZONES):
             if not reply_json_desc["present"][i]:
                 continue
-            vedo = ComelitVedoObject(
-                index=i,
-                name=reply_json_desc["description"][i],
-                p1=reply_json_desc["p1_pres"][i],
-                p2=reply_json_desc["p2_pres"][i],
-                zone_open=reply_json_stat["zone_open"],
-                ready=reply_json_stat["ready"][i],
-                armed=reply_json_stat["armed"][i],
-                alarm=reply_json_stat["alarm"][i],
-                alarm_memory=reply_json_stat["alarm_memory"][i],
-                sabotage=reply_json_stat["sabotage"][i],
-                anomaly=reply_json_stat["anomaly"][i],
-                in_time=reply_json_stat["in_time"][i],
-                out_time=reply_json_stat["out_time"][i],
-            )
+            vedo = await self.get_zone_status(i)
             alarms.update({i: vedo})
-        self._alarm.update({"alarm": alarms})
 
-        return self._alarm
+        return {"alarm": alarms}
