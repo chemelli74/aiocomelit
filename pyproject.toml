@@ -24,6 +24,7 @@ packages = [
 [tool.poetry.dependencies]
 python = "^3.10"
 aiohttp = "*"
+colorlog = "*"
 pint = "*"
 
 [tool.poetry.group.dev.dependencies]
