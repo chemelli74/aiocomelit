@@ -84,6 +84,7 @@ class ComelitCommonApi:
         self, page: str, reply_json: bool = True
     ) -> tuple[int, dict[str, Any]]:
         """Return status and data from a GET query."""
+        _LOGGER.debug("GET page %s [%s]", page, self.host)
         timestamp = datetime.now().strftime("%s")
         url = f"{self.base_url}{page}&_={timestamp}"
         try:
@@ -96,7 +97,10 @@ class ComelitCommonApi:
             _LOGGER.warning("Connection error during GET for host %s", self.host)
             raise CannotConnect from exc
 
+        _LOGGER.debug("GET response %s [%s]", await response.text(), self.host)
+
         if not reply_json:
+            _LOGGER.debug("GET response is empty [%s]", self.host)
             return response.status
 
         data = await response.json() if response.status == 200 else {}
@@ -106,6 +110,7 @@ class ComelitCommonApi:
         self, page: str, payload: dict[str, Any]
     ) -> SimpleCookie[str]:
         """Return status and data from a POST query."""
+        _LOGGER.debug("POST page %s [%s]", page, self.host)
         url = f"{self.base_url}{page}"
         try:
             response = await self._session.post(
@@ -118,6 +123,7 @@ class ComelitCommonApi:
             _LOGGER.warning("Connection error during POST for host %s", self.host)
             raise CannotConnect from exc
 
+        _LOGGER.debug("POST response %s [%s]", await response.text(), self.host)
         return response.cookies
 
     async def _check_logged_in(self, host_type: str) -> bool:

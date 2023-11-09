@@ -4,6 +4,8 @@ import asyncio
 import datetime
 import logging
 
+from colorlog import ColoredFormatter
+
 from aiocomelit import __version__
 from aiocomelit.api import ComelitVedoApi, ComelitVedoObject
 from aiocomelit.const import ALARM_ENABLE, VEDO
@@ -94,6 +96,31 @@ async def main() -> None:
     await vedo_api.close()
 
 
-if __name__ == "__main__":
+def set_logging() -> None:
     logging.basicConfig(level=logging.DEBUG)
+    logging.getLogger("asyncio").setLevel(logging.INFO)
+    logging.getLogger("charset_normalizer").setLevel(logging.INFO)
+    fmt = (
+        "%(asctime)s.%(msecs)03d %(levelname)s (%(threadName)s) [%(name)s] %(message)s"
+    )
+    colorfmt = f"%(log_color)s{fmt}%(reset)s"
+    logging.getLogger().handlers[0].setFormatter(
+        ColoredFormatter(
+            colorfmt,
+            datefmt="%Y-%m-%d %H:%M:%S",
+            reset=True,
+            log_colors={
+                "DEBUG": "cyan",
+                "INFO": "green",
+                "WARNING": "yellow",
+                "ERROR": "red",
+                "CRITICAL": "red",
+            },
+        )
+    )
+    return
+
+
+if __name__ == "__main__":
+    set_logging()
     asyncio.run(main())
