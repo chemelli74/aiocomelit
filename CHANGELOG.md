@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.5.0 (2023-11-10)
+
+### Feature
+
+* Improve performances ([#51](https://github.com/chemelli74/aiocomelit/issues/51)) ([`e4f65cb`](https://github.com/chemelli74/aiocomelit/commit/e4f65cba64e570b0e17e4907f7b7c955c4b0195d))
+
 ## v0.4.0 (2023-11-09)
 
 ### Feature
