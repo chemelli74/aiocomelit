@@ -21,7 +21,6 @@ from .const import (
     SCENARIO,
     SLEEP,
     STATE_COVER,
-    STATE_ERROR,
     STATE_ON,
     VEDO,
     WATT,
@@ -99,12 +98,14 @@ class ComelitCommonApi:
 
         _LOGGER.debug("GET response %s [%s]", await response.text(), self.host)
 
+        if response.status != 200:
+            raise CannotRetrieveData
+
         if not reply_json:
             _LOGGER.debug("GET response is empty [%s]", self.host)
             return response.status
 
-        data = await response.json() if response.status == 200 else {}
-        return response.status, data
+        return response.status, await response.json()
 
     async def _post_page_result(
         self, page: str, payload: dict[str, Any]
@@ -158,6 +159,7 @@ class ComelitCommonApi:
         self._session.cookie_jar.update_cookies(cookies)
 
         if await self._check_logged_in(host_type):
+            await asyncio.sleep(SLEEP)
             return True
 
         _LOGGER.warning(
@@ -210,14 +212,10 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
         return reply_status == 200
 
     async def get_device_status(self, device_type: str, index: int) -> int:
-        """Get device status, -1 means API call failed."""
-        await asyncio.sleep(SLEEP)
+        """Get device status."""
         reply_status, reply_json = await self._get_page_result(
             f"/user/icon_status.json?type={device_type}"
         )
-        if reply_status != 200:
-            return STATE_ERROR
-
         _LOGGER.debug(
             "Device %s[%s] status: %s", device_type, index, reply_json["status"][index]
         )
@@ -232,6 +230,9 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
         """Get all connected devices."""
 
         _LOGGER.debug("Getting all devices for host %s", self.host)
+
+        ureg = pint.UnitRegistry(cache_folder=":auto:")
+        ureg.default_format = "~"
 
         for dev_type in (CLIMATE, COVER, LIGHT, IRRIGATION, OTHER, SCENARIO):
             reply_status, reply_json = await self._get_page_result(
@@ -248,8 +249,6 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
                     "/user/counter.json"
                 )
             devices = {}
-            ureg = pint.UnitRegistry()
-            ureg.default_format = "~"
             for i in range(reply_json["num"]):
                 # Guard against "scenario", that has 32 devices even if none is configured
                 if reply_json["desc"][i] == "":
@@ -317,7 +316,6 @@ class ComelitVedoApi(ComelitCommonApi):
 
     async def get_zone_status(self, index: int) -> ComelitVedoObject:
         """Get zone status."""
-        await asyncio.sleep(SLEEP * 2)
         reply_status, reply_json = await self._get_page_result("/user/area_stat.json")
         if reply_status != 200:
             raise CannotRetrieveData

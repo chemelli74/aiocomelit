@@ -17,7 +17,6 @@ SCENARIO = "scenario"
 
 # Statuses
 STATE_COVER: list[str] = ["stopped", "opening", "closing"]
-STATE_ERROR = -1
 STATE_OFF = 0
 STATE_ON = 1
 
