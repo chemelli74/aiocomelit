@@ -302,8 +302,6 @@ class ComelitVedoApi(ComelitCommonApi):
     def __init__(self, host: str, port: int, alarm_pin: int) -> None:
         """Initialize the VEDO session."""
         super().__init__(host, port, alarm_pin)
-        self._json_area_desc: dict[str, Any] = {}
-        self._json_zone_desc: dict[str, Any] = {}
 
     async def _translate_zone_status(self, zone: ComelitVedoZoneObject) -> str:
         """Translate ZONE status."""
