@@ -11,9 +11,10 @@ from aiocomelit.api import (
     ComeliteSerialBridgeApi,
     ComelitSerialBridgeObject,
     ComelitVedoApi,
-    ComelitVedoObject,
+    ComelitVedoAreaObject,
 )
 from aiocomelit.const import (
+    ALARM_AREAS,
     ALARM_ENABLE,
     BRIDGE,
     COVER,
@@ -96,13 +97,13 @@ async def execute_device_test(
     print("Status after: ", await api.get_device_status(dev_type, device.index))
 
 
-async def execute_alarm_test(api: ComelitVedoApi, zone: ComelitVedoObject) -> None:
+async def execute_alarm_test(api: ComelitVedoApi, area: ComelitVedoAreaObject) -> None:
     """Execute a test routine on a specific VEDO zone."""
 
-    print(f"Test zone: {zone.name}")
-    print("Status before: ", await api.get_zone_status(zone.index))
-    await api.set_zone_status(zone.index, ALARM_ENABLE)
-    print("Status after: ", await api.get_zone_status(zone.index))
+    print(f"Test zone: {area.name}")
+    print("Status before: ", await api.get_area_status(area))
+    await api.set_zone_status(area.index, ALARM_ENABLE)
+    print("Status after: ", await api.get_area_status(area))
 
 
 async def main() -> None:
@@ -168,11 +169,11 @@ async def main() -> None:
             exit(1)
     print("Logged:", logged)
     print("-" * 20)
-    alarm_data = await vedo_api.get_config_and_status()
+    alarm_data = await vedo_api.get_all_areas_and_zones()
     print("Config:", alarm_data)
     print("-" * 20)
     if args.test:
-        await execute_alarm_test(vedo_api, alarm_data["alarm"][INDEX])
+        await execute_alarm_test(vedo_api, alarm_data[ALARM_AREAS][INDEX])
         print("-" * 20)
     print("Logout & close session")
     await vedo_api.logout()

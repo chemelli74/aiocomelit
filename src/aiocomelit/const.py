@@ -23,7 +23,8 @@ STATE_ON = 1
 # Alarm specific
 ALARM_DISABLE = "dis"
 ALARM_ENABLE = "tot"
-ALARM_FIELDS: dict[str, str] = {
+ALARM_AREAS = "alarm_areas"
+ALARM_AREA_STATUS: dict[str, str] = {
     "out_time": "arming",
     "in_time": "disarming",
     "anomaly": "anomaly",
@@ -32,9 +33,17 @@ ALARM_FIELDS: dict[str, str] = {
     "armed": "armed",
     "ready": "ready",
 }
-ALARM_MAX_ZONES = 8
+ALARM_ZONES = "alarm_zones"
+ALARM_ZONE_STATUS: dict[int, str] = {
+    1: "open",
+    2: "alarm",
+    12: "sabotated",
+    128: "excluded",
+    256: "isolated",
+    32768: "inhibited",
+}
 
-# Min time between updates
+# Min wait time after login
 SLEEP = 0.5
 
 # DEFAULT POWER UNIT

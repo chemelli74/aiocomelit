@@ -4,7 +4,8 @@ from .api import (
     ComeliteSerialBridgeApi,
     ComelitSerialBridgeObject,
     ComelitVedoApi,
-    ComelitVedoObject,
+    ComelitVedoAreaObject,
+    ComelitVedoZoneObject,
 )
 from .exceptions import (
     CannotAuthenticate,
@@ -17,7 +18,8 @@ __all__ = [
     "ComeliteSerialBridgeApi",
     "ComelitSerialBridgeObject",
     "ComelitVedoApi",
-    "ComelitVedoObject",
+    "ComelitVedoAreaObject",
+    "ComelitVedoZoneObject",
     "ComelitError",
     "CannotConnect",
     "CannotAuthenticate",
