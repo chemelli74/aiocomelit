@@ -27,6 +27,8 @@ from .const import (
     STATE_ON,
     VEDO,
     WATT,
+    AlarmAreaState,
+    AlarmZoneState,
 )
 from .exceptions import CannotAuthenticate, CannotConnect, CannotRetrieveData
 
@@ -63,7 +65,7 @@ class ComelitVedoAreaObject:
     anomaly: bool
     in_time: bool
     out_time: bool
-    human_status: str
+    human_status: AlarmAreaState
 
 
 @dataclass
@@ -73,7 +75,7 @@ class ComelitVedoZoneObject:
     index: int
     name: str
     status: int
-    human_status: str
+    human_status: AlarmZoneState
 
 
 class ComelitCommonApi:
@@ -303,23 +305,27 @@ class ComelitVedoApi(ComelitCommonApi):
         """Initialize the VEDO session."""
         super().__init__(host, port, alarm_pin)
 
-    async def _translate_zone_status(self, zone: ComelitVedoZoneObject) -> str:
+    async def _translate_zone_status(
+        self, zone: ComelitVedoZoneObject
+    ) -> AlarmZoneState:
         """Translate ZONE status."""
 
         for status in ALARM_ZONE_STATUS.keys():
             if zone.status & status != 0:
                 return ALARM_ZONE_STATUS[status]
 
-        return "ready"
+        return AlarmZoneState.OPEN
 
-    async def _translate_area_status(self, area: ComelitVedoAreaObject) -> str:
+    async def _translate_area_status(
+        self, area: ComelitVedoAreaObject
+    ) -> AlarmAreaState:
         """Translate AREA status."""
 
         for field in ALARM_AREA_STATUS.keys():
             if getattr(area, field):
                 return ALARM_AREA_STATUS[field]
 
-        return "disabled"
+        return AlarmAreaState.DISARMED
 
     async def _create_area_object(
         self, json_area_desc: dict[str, Any], json_area_stat: dict[str, Any], index: int
@@ -339,7 +345,7 @@ class ComelitVedoApi(ComelitCommonApi):
             anomaly=json_area_stat["anomaly"][index],
             in_time=json_area_stat["in_time"][index],
             out_time=json_area_stat["out_time"][index],
-            human_status="",
+            human_status=AlarmAreaState.UNKNOWN,
         )
         area.human_status = await self._translate_area_status(area)
         _LOGGER.debug(area)
@@ -356,7 +362,7 @@ class ComelitVedoApi(ComelitCommonApi):
             index=index,
             name=json_zone_desc["description"][index],
             status=status,
-            human_status="",
+            human_status=AlarmZoneState.UNKNOWN,
         )
         zone.human_status = await self._translate_zone_status(zone)
         _LOGGER.debug(zone)

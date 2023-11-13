@@ -1,5 +1,6 @@
 """Constants for Comelit Simple Home."""
 import logging
+from enum import Enum
 
 _LOGGER = logging.getLogger(__package__)
 
@@ -20,27 +21,49 @@ STATE_COVER: list[str] = ["stopped", "opening", "closing"]
 STATE_OFF = 0
 STATE_ON = 1
 
+
 # Alarm specific
+class AlarmAreaState(Enum):
+    ANOMALY = "anomaly"
+    ARMED = "armed"
+    DISARMED = "disarmed"
+    ENTRY_DELAY = "entry_delay"
+    EXIT_DELAY = "exit_delay"
+    SABOTAGE = "sabotage"
+    TRIGGERED = "triggered"
+    UNKNOWN = "unknown"
+
+
+class AlarmZoneState(Enum):
+    ALARM = "alarm"
+    OPEN = "open"
+    EXCLUDED = "excluded"
+    INHIBITED = "inhibited"
+    ISOLATED = "isolated"
+    SABOTATED = "sabotated"
+    UNKNOWN = "unknown"
+
+
 ALARM_DISABLE = "dis"
 ALARM_ENABLE = "tot"
 ALARM_AREAS = "alarm_areas"
-ALARM_AREA_STATUS: dict[str, str] = {
-    "out_time": "arming",
-    "in_time": "disarming",
-    "anomaly": "anomaly",
-    "sabotage": "sabotage",
-    "alarm": "alarm",
-    "armed": "armed",
-    "ready": "ready",
+ALARM_AREA_STATUS: dict[str, AlarmAreaState] = {
+    "out_time": AlarmAreaState.EXIT_DELAY,
+    "in_time": AlarmAreaState.ENTRY_DELAY,
+    "anomaly": AlarmAreaState.ANOMALY,
+    "sabotage": AlarmAreaState.SABOTAGE,
+    "alarm": AlarmAreaState.TRIGGERED,
+    "armed": AlarmAreaState.ARMED,
+    "ready": AlarmAreaState.DISARMED,
 }
 ALARM_ZONES = "alarm_zones"
-ALARM_ZONE_STATUS: dict[int, str] = {
-    1: "open",
-    2: "alarm",
-    12: "sabotated",
-    128: "excluded",
-    256: "isolated",
-    32768: "inhibited",
+ALARM_ZONE_STATUS: dict[int, AlarmZoneState] = {
+    1: AlarmZoneState.OPEN,
+    2: AlarmZoneState.ALARM,
+    12: AlarmZoneState.SABOTATED,
+    128: AlarmZoneState.EXCLUDED,
+    256: AlarmZoneState.ISOLATED,
+    32768: AlarmZoneState.INHIBITED,
 }
 
 # Min wait time after login
