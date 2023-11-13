@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.5.2 (2023-11-13)
+
+### Fix
+
+* Disk I/O pint should run in executor ([#53](https://github.com/chemelli74/aiocomelit/issues/53)) ([`ad95ade`](https://github.com/chemelli74/aiocomelit/commit/ad95ade1aa6ad94f2433a1c80f828792ce0f6689))
+
 ## v0.5.1 (2023-11-13)
 
 ### Fix
