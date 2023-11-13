@@ -1,5 +1,6 @@
 """Support for Comelit SimpleHome."""
 import asyncio
+import functools
 from dataclasses import dataclass
 from datetime import datetime
 from http.cookies import SimpleCookie
@@ -231,7 +232,10 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
 
         _LOGGER.debug("Getting all devices for host %s", self.host)
 
-        ureg = pint.UnitRegistry(cache_folder=":auto:")
+        loop = asyncio.get_running_loop()
+        ureg = await loop.run_in_executor(
+            None, functools.partial(pint.UnitRegistry, cache_folder=":auto:")
+        )
         ureg.default_format = "~"
 
         for dev_type in (CLIMATE, COVER, LIGHT, IRRIGATION, OTHER, SCENARIO):
