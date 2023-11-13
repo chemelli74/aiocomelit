@@ -124,7 +124,7 @@ class ComelitCommonApi:
 
     async def _post_page_result(
         self, page: str, payload: dict[str, Any]
-    ) -> SimpleCookie[str]:
+    ) -> SimpleCookie:
         """Return status and data from a POST query."""
         _LOGGER.debug("POST page %s [%s]", page, self.host)
         url = f"{self.base_url}{page}"
