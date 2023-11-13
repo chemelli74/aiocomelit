@@ -84,7 +84,7 @@ class ComelitCommonApi:
     ) -> tuple[int, dict[str, Any]]:
         """Return status and data from a GET query."""
         _LOGGER.debug("GET page %s [%s]", page, self.host)
-        timestamp = datetime.now().strftime("%s")
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         url = f"{self.base_url}{page}&_={timestamp}"
         try:
             response = await self._session.get(
