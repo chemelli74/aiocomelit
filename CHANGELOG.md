@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.5.1 (2023-11-13)
+
+### Fix
+
+* Timestamp strftime for Windows ([#54](https://github.com/chemelli74/aiocomelit/issues/54)) ([`1afe620`](https://github.com/chemelli74/aiocomelit/commit/1afe6208e3f0acfd370a8f38c52ae48da5064226))
+
 ## v0.5.0 (2023-11-10)
 
 ### Feature
