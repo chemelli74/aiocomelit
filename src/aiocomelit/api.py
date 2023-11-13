@@ -310,7 +310,7 @@ class ComelitVedoApi(ComelitCommonApi):
     ) -> AlarmZoneState:
         """Translate ZONE status."""
 
-        for status in ALARM_ZONE_STATUS.keys():
+        for status in ALARM_ZONE_STATUS:
             if zone.status & status != 0:
                 return ALARM_ZONE_STATUS[status]
 
@@ -321,7 +321,7 @@ class ComelitVedoApi(ComelitCommonApi):
     ) -> AlarmAreaState:
         """Translate AREA status."""
 
-        for field in ALARM_AREA_STATUS.keys():
+        for field in ALARM_AREA_STATUS:
             if getattr(area, field):
                 return ALARM_AREA_STATUS[field]
 
