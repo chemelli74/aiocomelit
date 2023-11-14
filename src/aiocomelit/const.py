@@ -40,6 +40,7 @@ class AlarmZoneState(Enum):
     EXCLUDED = "excluded"
     INHIBITED = "inhibited"
     ISOLATED = "isolated"
+    REST = "rest"
     SABOTATED = "sabotated"
     UNKNOWN = "unknown"
 
@@ -58,6 +59,7 @@ ALARM_AREA_STATUS: dict[str, AlarmAreaState] = {
 }
 ALARM_ZONES = "alarm_zones"
 ALARM_ZONE_STATUS: dict[int, AlarmZoneState] = {
+    0: AlarmZoneState.REST,
     1: AlarmZoneState.OPEN,
     2: AlarmZoneState.ALARM,
     12: AlarmZoneState.SABOTATED,

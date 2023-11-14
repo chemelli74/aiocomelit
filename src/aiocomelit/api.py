@@ -314,7 +314,7 @@ class ComelitVedoApi(ComelitCommonApi):
             if zone.status & status != 0:
                 return ALARM_ZONE_STATUS[status]
 
-        return AlarmZoneState.OPEN
+        return AlarmZoneState.REST
 
     async def _translate_area_status(
         self, area: ComelitVedoAreaObject
