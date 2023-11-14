@@ -16,6 +16,7 @@ from aiocomelit.api import (
 from aiocomelit.const import (
     ALARM_AREAS,
     ALARM_ENABLE,
+    ALARM_ZONES,
     BRIDGE,
     COVER,
     IRRIGATION,
@@ -170,7 +171,13 @@ async def main() -> None:
     print("Logged:", logged)
     print("-" * 20)
     alarm_data = await vedo_api.get_all_areas_and_zones()
-    print("Config:", alarm_data)
+    print("AREAS:")
+    for area in alarm_data[ALARM_AREAS]:
+        print(alarm_data[ALARM_AREAS][area])
+    print("-" * 20)
+    print("ZONES:")
+    for zone in alarm_data[ALARM_ZONES]:
+        print(alarm_data[ALARM_ZONES][zone])
     print("-" * 20)
     if args.test:
         await execute_alarm_test(vedo_api, alarm_data[ALARM_AREAS][INDEX])
