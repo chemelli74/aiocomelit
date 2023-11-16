@@ -1,5 +1,6 @@
 """Constants for Comelit Simple Home."""
 import logging
+from enum import Enum
 
 _LOGGER = logging.getLogger(__package__)
 
@@ -20,21 +21,62 @@ STATE_COVER: list[str] = ["stopped", "opening", "closing"]
 STATE_OFF = 0
 STATE_ON = 1
 
+
 # Alarm specific
+class AlarmAreaState(Enum):
+    ANOMALY = "anomaly"
+    ARMED = "armed"
+    DISARMED = "disarmed"
+    ENTRY_DELAY = "entry_delay"
+    EXIT_DELAY = "exit_delay"
+    SABOTAGE = "sabotage"
+    TRIGGERED = "triggered"
+    UNKNOWN = "unknown"
+
+
+class AlarmZoneState(Enum):
+    ALARM = "alarm"
+    ARMED = "armed"
+    OPEN = "open"
+    EXCLUDED = "excluded"
+    FAULTY = "faulty"
+    INHIBITED = "inhibited"
+    ISOLATED = "isolated"
+    REST = "rest"
+    SABOTATED = "sabotated"
+    UNAVAILABLE = "unavailable"
+    UNKNOWN = "unknown"
+
+
 ALARM_DISABLE = "dis"
 ALARM_ENABLE = "tot"
-ALARM_FIELDS: dict[str, str] = {
-    "out_time": "arming",
-    "in_time": "disarming",
-    "anomaly": "anomaly",
-    "sabotage": "sabotage",
-    "alarm": "alarm",
-    "armed": "armed",
-    "ready": "ready",
+ALARM_AREAS = "alarm_areas"
+ALARM_AREA_STATUS: dict[str, AlarmAreaState] = {
+    "out_time": AlarmAreaState.EXIT_DELAY,
+    "in_time": AlarmAreaState.ENTRY_DELAY,
+    "anomaly": AlarmAreaState.ANOMALY,
+    "sabotage": AlarmAreaState.SABOTAGE,
+    "alarm": AlarmAreaState.TRIGGERED,
+    "armed": AlarmAreaState.ARMED,
+    "ready": AlarmAreaState.DISARMED,
 }
-ALARM_MAX_ZONES = 8
+ALARM_ZONES = "alarm_zones"
+ALARM_ZONE_STATUS: dict[int, AlarmZoneState] = {
+    # Alarm state needs to be checked first
+    # because is reported as OPEN + ALARM + ARMED [51]
+    2: AlarmZoneState.ALARM,
+    0: AlarmZoneState.REST,
+    1: AlarmZoneState.OPEN,
+    4: AlarmZoneState.FAULTY,
+    8: AlarmZoneState.SABOTATED,
+    32: AlarmZoneState.ARMED,
+    128: AlarmZoneState.EXCLUDED,
+    256: AlarmZoneState.ISOLATED,
+    512: AlarmZoneState.UNAVAILABLE,
+    32768: AlarmZoneState.INHIBITED,
+}
 
-# Min time between updates
+# Min wait time after login
 SLEEP = 0.5
 
 # DEFAULT POWER UNIT
