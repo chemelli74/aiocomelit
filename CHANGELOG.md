@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.6.0 (2023-11-16)
+
+### Feature
+
+* More alarm data and code cleanup ([#52](https://github.com/chemelli74/aiocomelit/issues/52)) ([`abddf2a`](https://github.com/chemelli74/aiocomelit/commit/abddf2a3e0ddef609c6461b59d5ee6a49a6d7ecd))
+
 ## v0.5.2 (2023-11-13)
 
 ### Fix
