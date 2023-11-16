@@ -36,12 +36,15 @@ class AlarmAreaState(Enum):
 
 class AlarmZoneState(Enum):
     ALARM = "alarm"
+    ARMED = "armed"
     OPEN = "open"
     EXCLUDED = "excluded"
+    FAULTY = "faulty"
     INHIBITED = "inhibited"
     ISOLATED = "isolated"
     REST = "rest"
     SABOTATED = "sabotated"
+    UNAVAILABLE = "unavailable"
     UNKNOWN = "unknown"
 
 
@@ -59,12 +62,17 @@ ALARM_AREA_STATUS: dict[str, AlarmAreaState] = {
 }
 ALARM_ZONES = "alarm_zones"
 ALARM_ZONE_STATUS: dict[int, AlarmZoneState] = {
+    # Alarm state needs to be checked first
+    # because is reported as OPEN + ALARM + ARMED [51]
+    2: AlarmZoneState.ALARM,
     0: AlarmZoneState.REST,
     1: AlarmZoneState.OPEN,
-    2: AlarmZoneState.ALARM,
-    12: AlarmZoneState.SABOTATED,
+    4: AlarmZoneState.FAULTY,
+    8: AlarmZoneState.SABOTATED,
+    32: AlarmZoneState.ARMED,
     128: AlarmZoneState.EXCLUDED,
     256: AlarmZoneState.ISOLATED,
+    512: AlarmZoneState.UNAVAILABLE,
     32768: AlarmZoneState.INHIBITED,
 }
 

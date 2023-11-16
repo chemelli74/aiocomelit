@@ -74,6 +74,7 @@ class ComelitVedoZoneObject:
 
     index: int
     name: str
+    status_api: str
     status: int
     human_status: AlarmZoneState
 
@@ -356,12 +357,13 @@ class ComelitVedoApi(ComelitCommonApi):
     ) -> ComelitVedoZoneObject:
         """Create zone object."""
 
-        status = int(json_zone_stat["status"].split(",")[index], 16)
+        status_api = json_zone_stat["status"].split(",")[index]
 
         zone = ComelitVedoZoneObject(
             index=index,
             name=json_zone_desc["description"][index],
-            status=status,
+            status=int(status_api, 16),
+            status_api=status_api,
             human_status=AlarmZoneState.UNKNOWN,
         )
         zone.human_status = await self._translate_zone_status(zone)
