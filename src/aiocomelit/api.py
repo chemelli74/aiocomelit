@@ -92,8 +92,13 @@ class ComelitCommonApi:
             "Accept-Language": "en-GB,en;q=0.5",
             "X-Requested-With": "XMLHttpRequest",
         }
+        self._create_session()
+
+    def _create_session(self) -> None:
+        """Create an aiohttp session."""
         jar = aiohttp.CookieJar(unsafe=True)
         self._session = aiohttp.ClientSession(cookie_jar=jar)
+        return
 
     async def _get_page_result(
         self, page: str, reply_json: bool = True
@@ -145,6 +150,10 @@ class ComelitCommonApi:
 
     async def _check_logged_in(self, host_type: str) -> bool:
         """Check if login is active."""
+
+        if self._session.closed:
+            self._create_session()
+
         reply_status, reply_json = await self._get_page_result("/login.json")
 
         _LOGGER.debug("%s login reply: %s", host_type, reply_json)
