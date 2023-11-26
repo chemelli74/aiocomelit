@@ -113,7 +113,7 @@ class ComelitCommonApi:
                 headers=self._headers,
                 timeout=10,
             )
-        except (asyncio.exceptions.TimeoutError, aiohttp.ClientConnectorError) as exc:
+        except (asyncio.TimeoutError, aiohttp.ClientConnectorError) as exc:
             _LOGGER.warning("Connection error during GET for host %s", self.host)
             raise CannotConnect from exc
 
@@ -141,7 +141,7 @@ class ComelitCommonApi:
                 headers=self._headers,
                 timeout=10,
             )
-        except (asyncio.exceptions.TimeoutError, aiohttp.ClientConnectorError) as exc:
+        except (asyncio.TimeoutError, aiohttp.ClientConnectorError) as exc:
             _LOGGER.warning("Connection error during POST for host %s", self.host)
             raise CannotConnect from exc
 
