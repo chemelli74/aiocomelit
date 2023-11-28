@@ -98,7 +98,7 @@ class ComelitCommonApi:
     def _create_session(self) -> None:
         """Create an aiohttp session."""
 
-        if not self._session or self._session.closed:
+        if not hasattr(self, "_session") or self._session.closed:
             _LOGGER.debug("Creating HTTP ClientSession")
             jar = aiohttp.CookieJar(unsafe=True)
             self._session = aiohttp.ClientSession(cookie_jar=jar)
