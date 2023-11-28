@@ -92,8 +92,7 @@ class ComelitCommonApi:
             "Accept-Language": "en-GB,en;q=0.5",
             "X-Requested-With": "XMLHttpRequest",
         }
-        jar = aiohttp.CookieJar(unsafe=True)
-        self._session = aiohttp.ClientSession(cookie_jar=jar)
+        self._session: aiohttp.ClientSession
 
     async def _get_page_result(
         self, page: str, reply_json: bool = True
@@ -108,7 +107,7 @@ class ComelitCommonApi:
                 headers=self._headers,
                 timeout=10,
             )
-        except (asyncio.exceptions.TimeoutError, aiohttp.ClientConnectorError) as exc:
+        except (asyncio.TimeoutError, aiohttp.ClientConnectorError) as exc:
             _LOGGER.warning("Connection error during GET for host %s", self.host)
             raise CannotConnect from exc
 
@@ -136,7 +135,7 @@ class ComelitCommonApi:
                 headers=self._headers,
                 timeout=10,
             )
-        except (asyncio.exceptions.TimeoutError, aiohttp.ClientConnectorError) as exc:
+        except (asyncio.TimeoutError, aiohttp.ClientConnectorError) as exc:
             _LOGGER.warning("Connection error during POST for host %s", self.host)
             raise CannotConnect from exc
 
@@ -145,6 +144,12 @@ class ComelitCommonApi:
 
     async def _check_logged_in(self, host_type: str) -> bool:
         """Check if login is active."""
+
+        if not hasattr(self, "_session") or self._session.closed:
+            _LOGGER.debug("Creating HTTP ClientSession")
+            jar = aiohttp.CookieJar(unsafe=True)
+            self._session = aiohttp.ClientSession(cookie_jar=jar)
+
         reply_status, reply_json = await self._get_page_result("/login.json")
 
         _LOGGER.debug("%s login reply: %s", host_type, reply_json)
