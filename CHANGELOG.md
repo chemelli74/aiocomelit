@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.6.2 (2023-11-28)
+
+### Fix
+
+* Close session only if available ([#60](https://github.com/chemelli74/aiocomelit/issues/60)) ([`2acca97`](https://github.com/chemelli74/aiocomelit/commit/2acca97ee3d92ae8bba9c6481ad4461398ccfd21))
+
 ## v0.6.1 (2023-11-28)
 
 ### Fix
