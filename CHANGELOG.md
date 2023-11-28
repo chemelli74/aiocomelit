@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.6.1 (2023-11-28)
+
+### Fix
+
+* Recreate closed aiohttp session ([#57](https://github.com/chemelli74/aiocomelit/issues/57)) ([`98dc8bc`](https://github.com/chemelli74/aiocomelit/commit/98dc8bc3d0bda3c95e4ea2476b32f52e94528473))
+
 ## v0.6.0 (2023-11-16)
 
 ### Feature
