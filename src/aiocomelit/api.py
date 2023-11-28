@@ -198,7 +198,8 @@ class ComelitCommonApi:
 
     async def close(self) -> None:
         """Comelit Simple Home close session."""
-        await self._session.close()
+        if hasattr(self, "_session"):
+            await self._session.close()
 
 
 class ComeliteSerialBridgeApi(ComelitCommonApi):
