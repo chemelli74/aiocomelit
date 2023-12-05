@@ -211,9 +211,9 @@ class ComelitCommonApi:
 class ComeliteSerialBridgeApi(ComelitCommonApi):
     """Queries Comelit SimpleHome Serial bridge."""
 
-    def __init__(self, host: str, port: int, bridge_pin: int) -> None:
+    def __init__(self, host: str, port: int, bridge_pin: int, session: aiohttp.ClientSession | None = None) -> None:
         """Initialize the session."""
-        super().__init__(host, port, bridge_pin)
+        super().__init__(host, port, bridge_pin, session)
         self._devices: dict[str, dict[int, ComelitSerialBridgeObject]] = {}
 
     async def _translate_device_status(self, dev_type: str, dev_status: int) -> str:
@@ -313,10 +313,6 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
 
 class ComelitVedoApi(ComelitCommonApi):
     """Queries Comelit SimpleHome VEDO alarm."""
-
-    def __init__(self, host: str, port: int, alarm_pin: int) -> None:
-        """Initialize the VEDO session."""
-        super().__init__(host, port, alarm_pin)
 
     async def _translate_zone_status(
         self, zone: ComelitVedoZoneObject
