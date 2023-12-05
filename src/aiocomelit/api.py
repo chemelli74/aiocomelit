@@ -84,7 +84,13 @@ class ComelitCommonApi:
 
     _close_session: bool = False
 
-    def __init__(self, host: str, port: int, pin: int, session: aiohttp.ClientSession | None = None) -> None:
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        pin: int,
+        session: aiohttp.ClientSession | None = None,
+    ) -> None:
         """Initialize the session."""
         self.host = f"{host}:{port}"
         self.device_pin = pin
