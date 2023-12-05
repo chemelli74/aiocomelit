@@ -217,7 +217,13 @@ class ComelitCommonApi:
 class ComeliteSerialBridgeApi(ComelitCommonApi):
     """Queries Comelit SimpleHome Serial bridge."""
 
-    def __init__(self, host: str, port: int, bridge_pin: int, session: aiohttp.ClientSession | None = None) -> None:
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        bridge_pin: int,
+        session: aiohttp.ClientSession | None = None,
+    ) -> None:
         """Initialize the session."""
         super().__init__(host, port, bridge_pin, session)
         self._devices: dict[str, dict[int, ComelitSerialBridgeObject]] = {}
