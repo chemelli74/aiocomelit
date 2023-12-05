@@ -82,7 +82,9 @@ class ComelitVedoZoneObject:
 class ComelitCommonApi:
     """Common API calls for Comelit SimpleHome devices."""
 
-    def __init__(self, host: str, port: int, pin: int) -> None:
+    _close_session: bool = False
+
+    def __init__(self, host: str, port: int, pin: int, session: aiohttp.ClientSession | None = None) -> None:
         """Initialize the session."""
         self.host = f"{host}:{port}"
         self.device_pin = pin
@@ -92,7 +94,11 @@ class ComelitCommonApi:
             "Accept-Language": "en-GB,en;q=0.5",
             "X-Requested-With": "XMLHttpRequest",
         }
-        self._session: aiohttp.ClientSession
+        if session:
+            self._session = session
+        else:
+            self._session = aiohttp.ClientSession()
+            self._close_session = True
 
     async def _get_page_result(
         self, page: str, reply_json: bool = True
@@ -198,7 +204,7 @@ class ComelitCommonApi:
 
     async def close(self) -> None:
         """Comelit Simple Home close session."""
-        if hasattr(self, "_session"):
+        if self._close_session:
             await self._session.close()
 
 
