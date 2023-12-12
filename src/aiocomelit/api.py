@@ -1,8 +1,7 @@
 """Support for Comelit SimpleHome."""
-from abc import abstractmethod
-
 import asyncio
 import functools
+from abc import abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
 from http.cookies import SimpleCookie
