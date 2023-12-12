@@ -1,4 +1,6 @@
 """Support for Comelit SimpleHome."""
+from abc import abstractmethod
+
 import asyncio
 import functools
 from dataclasses import dataclass
