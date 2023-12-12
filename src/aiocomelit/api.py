@@ -82,8 +82,6 @@ class ComelitVedoZoneObject:
 class ComelitCommonApi:
     """Common API calls for Comelit SimpleHome devices."""
 
-    _host_type: str
-
     def __init__(self, host: str, port: int, pin: int) -> None:
         """Initialize the session."""
         self.host = f"{host}:{port}"
@@ -163,15 +161,14 @@ class ComelitCommonApi:
         return logged
 
     async def login(self) -> bool:
-        """Login to Serial Bridge device."""
-        payload = {"dom": self.device_pin}
-        return await self._login(payload)
+        """Login to Comelit device."""
+        pass
 
-    async def _login(self, payload: dict[str, Any]) -> bool:
+    async def _login(self, payload: dict[str, Any], host_type: str) -> bool:
         """Login into Comelit device."""
-        _LOGGER.debug("Logging into host %s [%s]", self.host, self._host_type)
+        _LOGGER.debug("Logging into host %s [%s]", self.host, host_type)
 
-        if await self._check_logged_in(self._host_type):
+        if await self._check_logged_in(host_type):
             return True
 
         cookies = await self._post_page_result("/login.cgi", payload)
@@ -180,20 +177,20 @@ class ComelitCommonApi:
             _LOGGER.warning(
                 "Authentication failed for host %s [%s]: no cookies received",
                 self.host,
-                self._host_type,
+                host_type,
             )
             raise CannotAuthenticate
 
         self._session.cookie_jar.update_cookies(cookies)
 
-        if await self._check_logged_in(self._host_type):
+        if await self._check_logged_in(host_type):
             await asyncio.sleep(SLEEP)
             return True
 
         _LOGGER.warning(
             "Authentication failed for host %s [%s]: generic error",
             self.host,
-            self._host_type,
+            host_type,
         )
         raise CannotAuthenticate
 
@@ -211,8 +208,6 @@ class ComelitCommonApi:
 
 class ComeliteSerialBridgeApi(ComelitCommonApi):
     """Queries Comelit SimpleHome Serial bridge."""
-
-    _host_type = BRIDGE
 
     def __init__(self, host: str, port: int, bridge_pin: int) -> None:
         """Initialize the session."""
@@ -251,6 +246,11 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
             "Device %s[%s] status: %s", device_type, index, reply_json["status"][index]
         )
         return reply_json["status"][index]
+
+    async def login(self) -> bool:
+        """Login to Serial Bridge device."""
+        payload = {"dom": self.device_pin}
+        return await self._login(payload, BRIDGE)
 
     async def get_all_devices(self) -> dict[str, dict[int, ComelitSerialBridgeObject]]:
         """Get all connected devices."""
@@ -311,8 +311,6 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
 
 class ComelitVedoApi(ComelitCommonApi):
     """Queries Comelit SimpleHome VEDO alarm."""
-
-    _host_type = VEDO
 
     async def _translate_zone_status(
         self, zone: ComelitVedoZoneObject
@@ -401,6 +399,11 @@ class ComelitVedoApi(ComelitCommonApi):
             f"/action.cgi?vedo=1&{action}={index}&force={int(force)}", False
         )
         return reply_status == 200
+
+    async def login(self) -> bool:
+        """Login to VEDO system."""
+        payload = {"code": self.device_pin}
+        return await self._login(payload, VEDO)
 
     async def get_area_status(
         self, area: ComelitVedoAreaObject
