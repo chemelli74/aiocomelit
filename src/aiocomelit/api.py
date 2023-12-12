@@ -160,9 +160,9 @@ class ComelitCommonApi:
 
         return logged
 
+    @abstractmethod
     async def login(self) -> bool:
         """Login to Comelit device."""
-        pass
 
     async def _login(self, payload: dict[str, Any], host_type: str) -> bool:
         """Login into Comelit device."""
