@@ -1,6 +1,7 @@
 """Support for Comelit SimpleHome."""
 import asyncio
 import functools
+from abc import abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
 from http.cookies import SimpleCookie
@@ -160,6 +161,10 @@ class ComelitCommonApi:
 
         return logged
 
+    @abstractmethod
+    async def login(self) -> bool:
+        """Login to Comelit device."""
+
     async def _login(self, payload: dict[str, Any], host_type: str) -> bool:
         """Login into Comelit device."""
         _LOGGER.debug("Logging into host %s [%s]", self.host, host_type)
@@ -307,10 +312,6 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
 
 class ComelitVedoApi(ComelitCommonApi):
     """Queries Comelit SimpleHome VEDO alarm."""
-
-    def __init__(self, host: str, port: int, alarm_pin: int) -> None:
-        """Initialize the VEDO session."""
-        super().__init__(host, port, alarm_pin)
 
     async def _translate_zone_status(
         self, zone: ComelitVedoZoneObject
