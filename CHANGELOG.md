@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.7.0 (2023-12-16)
+
+### Feature
+
+* Make login a shared method ([#64](https://github.com/chemelli74/aiocomelit/issues/64)) ([`4862904`](https://github.com/chemelli74/aiocomelit/commit/4862904880eb6d73677f90e7f9a9e74e65d73368))
+
 ## v0.6.2 (2023-11-28)
 
 ### Fix
