@@ -425,45 +425,42 @@ class ComelitVedoApi(ComelitCommonApi):
         self,
     ) -> dict[str, dict[int, Any]]:
         """Get all VEDO system AREA and ZONE."""
-        reply_status, reply_json_area_desc = await self._get_page_result(
-            "/user/area_desc.json"
-        )
-        _LOGGER.debug("Alarm AREA description: %s", reply_json_area_desc)
 
-        reply_status, reply_json_zone_desc = await self._get_page_result(
-            "/user/zone_desc.json"
-        )
-        _LOGGER.debug("Alarm ZONE description: %s", reply_json_zone_desc)
+        queries = {
+            1: {"desc": "AREA description", "page": "/user/area_desc.json"},
+            2: {"desc": "ZONE description", "page": "/user/zone_desc.json"},
+            3: {"desc": "AREA statistics", "page": "/user/area_stat.json"},
+            4: {"desc": "ZONE statistics", "page": "/user/zone_stat.json"},
+        }
+        reply_json_data: list[dict[Any, Any]] = []
 
-        reply_status, reply_json_area_stat = await self._get_page_result(
-            "/user/area_stat.json"
-        )
-        _LOGGER.debug("Alarm AREA statistics: %s", reply_json_area_stat)
+        for info in queries.values():
+            reply_status, reply_json = await self._get_page_result(info["page"])
+            _LOGGER.debug("Alarm %s: %s", info["desc"], reply_json)
+            if not reply_json["logged"]:
+                _LOGGER.warning("VEDO host %s require cookie refresh", self.host)
+                raise CannotRetrieveData
+            reply_json_data.append(reply_json)
 
-        reply_status, reply_json_zone_stat = await self._get_page_result(
-            "/user/zone_stat.json"
-        )
-        _LOGGER.debug("Alarm ZONE statistics: %s", reply_json_zone_stat)
-
-        list_areas: list[int] = reply_json_area_desc["present"]
+        list_areas: list[int] = reply_json_data[0]["present"]
         areas = {}
         for i in range(len(list_areas)):
             if not list_areas[i]:
                 _LOGGER.debug("Alarm skipping non present AREA [%i]", i)
                 continue
             area = await self._create_area_object(
-                reply_json_area_desc, reply_json_area_stat, i
+                reply_json_data[0], reply_json_data[2], i
             )
             areas.update({i: area})
 
-        list_zones: list[int] = reply_json_zone_desc["in_area"]
+        list_zones: list[int] = reply_json_data[1]["in_area"]
         zones = {}
         for i in range(len(list_zones)):
             if not list_zones[i]:
                 _LOGGER.debug("Alarm skipping non present ZONE [%i]", i)
                 continue
             zone = await self._create_zone_object(
-                reply_json_zone_desc, reply_json_zone_stat, i
+                reply_json_data[1], reply_json_data[3], i
             )
             zones.update({i: zone})
 
