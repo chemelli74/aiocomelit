@@ -9,6 +9,7 @@ from typing import Any
 
 import aiohttp
 import pint
+from yarl import URL
 
 from .const import (
     _LOGGER,
@@ -115,6 +116,9 @@ class ComelitCommonApi:
         _LOGGER.debug("GET response %s [%s]", await response.text(), self.host)
 
         if response.status != 200:
+            _LOGGER.warning(
+                "Response error to GET for host %s: code %s", self.host, response.status
+            )
             raise CannotRetrieveData
 
         if not reply_json:
@@ -141,15 +145,19 @@ class ComelitCommonApi:
             raise CannotConnect from exc
 
         _LOGGER.debug("POST response %s [%s]", await response.text(), self.host)
+
+        if response.status != 200:
+            _LOGGER.warning(
+                "Response error to POST for host %s: code %s",
+                self.host,
+                response.status,
+            )
+            raise CannotRetrieveData
+
         return response.cookies
 
     async def _check_logged_in(self, host_type: str) -> bool:
         """Check if login is active."""
-
-        if not hasattr(self, "_session") or self._session.closed:
-            _LOGGER.debug("Creating HTTP ClientSession")
-            jar = aiohttp.CookieJar(unsafe=True)
-            self._session = aiohttp.ClientSession(cookie_jar=jar)
 
         reply_status, reply_json = await self._get_page_result("/login.json")
 
@@ -169,10 +177,17 @@ class ComelitCommonApi:
         """Login into Comelit device."""
         _LOGGER.debug("Logging into host %s [%s]", self.host, host_type)
 
+        if not hasattr(self, "_session") or self._session.closed:
+            _LOGGER.debug("Creating HTTP ClientSession")
+            jar = aiohttp.CookieJar(unsafe=True)
+            connector = aiohttp.TCPConnector(force_close=True)
+            self._session = aiohttp.ClientSession(cookie_jar=jar, connector=connector)
+
         if await self._check_logged_in(host_type):
             return True
 
         cookies = await self._post_page_result("/login.cgi", payload)
+        _LOGGER.debug("Cookies for host %s: %s", self.host, cookies)
 
         if not cookies:
             _LOGGER.warning(
@@ -182,7 +197,7 @@ class ComelitCommonApi:
             )
             raise CannotAuthenticate
 
-        self._session.cookie_jar.update_cookies(cookies)
+        self._session.cookie_jar.update_cookies(cookies, URL(self.base_url))
 
         if await self._check_logged_in(host_type):
             await asyncio.sleep(SLEEP)
