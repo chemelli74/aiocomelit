@@ -6,16 +6,7 @@
       "type": "python",
       "request": "launch",
       "program": "library_test.py",
-      "args": ["-bp", "<your pin>"],
-      "console": "integratedTerminal",
-      "justMyCode": true
-    },
-    {
-      "name": "Python: VEDO test",
-      "type": "python",
-      "request": "launch",
-      "program": "vedo_test.py",
-      "args": ["-vp", "<your pin>"],
+      "args": ["-bp", "<your pin>", "-vp", "<your pin"],
       "console": "integratedTerminal",
       "justMyCode": true
     }
