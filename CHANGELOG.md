@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.7.3 (2024-01-10)
+
+### Fix
+
+* Not logged in edge cases ([#79](https://github.com/chemelli74/aiocomelit/issues/79)) ([`4363dbb`](https://github.com/chemelli74/aiocomelit/commit/4363dbb54d90f5a4fc77a2be17f0df8ef121a09a))
+
 ## v0.7.2 (2024-01-10)
 
 ### Fix
