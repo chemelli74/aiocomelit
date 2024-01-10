@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.7.2 (2024-01-10)
+
+### Fix
+
+* Handle NotLogged sporadic status ([#74](https://github.com/chemelli74/aiocomelit/issues/74)) ([`92e5663`](https://github.com/chemelli74/aiocomelit/commit/92e56636d15f95fbbb26011331d53a31938c003d))
+
 ## v0.7.1 (2024-01-10)
 
 ### Fix
