@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.7.1 (2024-01-10)
+
+### Fix
+
+* Improve cookies handling ([#72](https://github.com/chemelli74/aiocomelit/issues/72)) ([`fdf3bb5`](https://github.com/chemelli74/aiocomelit/commit/fdf3bb52173e6a9888d23b877c925c285676c3bb))
+
 ## v0.7.0 (2023-12-16)
 
 ### Feature
