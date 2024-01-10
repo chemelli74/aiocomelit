@@ -420,6 +420,9 @@ class ComelitVedoApi(ComelitCommonApi):
         )
         _LOGGER.debug("Alarm AREA statistics: %s", reply_json_area_stat)
 
+        if not reply_json_area_stat["logged"]:
+            raise CannotRetrieveData("Logged is 0 in /user/area_stat.json")
+
         description = {"description": area.name, "p1_pres": area.p1, "p2_pres": area.p2}
 
         return await self._create_area_object(
@@ -458,10 +461,13 @@ class ComelitVedoApi(ComelitCommonApi):
             )
             areas.update({i: area})
 
-        list_zones: list[int] = reply_json_data[1]["in_area"]
+        list_zones: list[int] = reply_json_data[1]["present"]
+        if "1" not in list_zones:
+            raise CannotRetrieveData("All zones not present in /user/zone_stat.json")
+
         zones = {}
         for i in range(len(list_zones)):
-            if not list_zones[i]:
+            if not int(list_zones[i]):
                 _LOGGER.debug("Alarm skipping non present ZONE [%i]", i)
                 continue
             zone = await self._create_zone_object(
