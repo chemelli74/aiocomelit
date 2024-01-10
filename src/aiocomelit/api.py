@@ -110,20 +110,16 @@ class ComelitCommonApi:
                 timeout=10,
             )
         except (asyncio.TimeoutError, aiohttp.ClientConnectorError) as exc:
-            _LOGGER.warning("Connection error during GET for host %s", self.host)
-            raise CannotConnect from exc
+            raise CannotConnect("Connection error during GET") from exc
 
         _LOGGER.debug("GET response %s [%s]", await response.text(), self.host)
 
         if response.status != 200:
-            _LOGGER.warning(
-                "Response error to GET for host %s: code %s", self.host, response.status
-            )
-            raise CannotRetrieveData
+            raise CannotRetrieveData(f"GET response status {response.status}")
 
         if not reply_json:
             _LOGGER.debug("GET response is empty [%s]", self.host)
-            return response.status
+            return response.status, {}
 
         return response.status, await response.json()
 
@@ -141,18 +137,12 @@ class ComelitCommonApi:
                 timeout=10,
             )
         except (asyncio.TimeoutError, aiohttp.ClientConnectorError) as exc:
-            _LOGGER.warning("Connection error during POST for host %s", self.host)
-            raise CannotConnect from exc
+            raise CannotConnect("Connection error during POST") from exc
 
         _LOGGER.debug("POST response %s [%s]", await response.text(), self.host)
 
         if response.status != 200:
-            _LOGGER.warning(
-                "Response error to POST for host %s: code %s",
-                self.host,
-                response.status,
-            )
-            raise CannotRetrieveData
+            raise CannotRetrieveData(f"POST response status {response.status}")
 
         return response.cookies
 
@@ -450,11 +440,11 @@ class ComelitVedoApi(ComelitCommonApi):
         reply_json_data: list[dict[Any, Any]] = []
 
         for info in queries.values():
-            reply_status, reply_json = await self._get_page_result(info["page"])
+            page = info["page"]
+            reply_status, reply_json = await self._get_page_result(page)
             _LOGGER.debug("Alarm %s: %s", info["desc"], reply_json)
             if not reply_json["logged"]:
-                _LOGGER.warning("VEDO host %s require cookie refresh", self.host)
-                raise CannotRetrieveData
+                raise CannotRetrieveData(f"Logged is 0 in {page}")
             reply_json_data.append(reply_json)
 
         list_areas: list[int] = reply_json_data[0]["present"]
