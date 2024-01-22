@@ -146,6 +146,13 @@ class ComelitCommonApi:
 
         return response.cookies
 
+    async def _is_session_active(self) -> bool:
+        """Check if aiohttp session is still active."""
+        if not hasattr(self, "_session") or self._session.closed:
+            return False
+
+        return True
+
     async def _check_logged_in(self, host_type: str) -> bool:
         """Check if login is active."""
 
@@ -167,7 +174,7 @@ class ComelitCommonApi:
         """Login into Comelit device."""
         _LOGGER.debug("Logging into host %s [%s]", self.host, host_type)
 
-        if not hasattr(self, "_session") or self._session.closed:
+        if not await self._is_session_active():
             _LOGGER.debug("Creating HTTP ClientSession")
             jar = aiohttp.CookieJar(unsafe=True)
             connector = aiohttp.TCPConnector(force_close=True)
@@ -202,13 +209,14 @@ class ComelitCommonApi:
 
     async def logout(self) -> None:
         """Comelit Simple Home logout."""
-        payload = {"logout": 1}
-        await self._post_page_result("/login.cgi", payload)
-        self._session.cookie_jar.clear()
+        if await self._is_session_active():
+            payload = {"logout": 1}
+            await self._post_page_result("/login.cgi", payload)
+            self._session.cookie_jar.clear()
 
     async def close(self) -> None:
         """Comelit Simple Home close session."""
-        if hasattr(self, "_session"):
+        if await self._is_session_active():
             await self._session.close()
 
 
