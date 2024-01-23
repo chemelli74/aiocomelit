@@ -76,8 +76,8 @@ ALARM_ZONE_STATUS: dict[int, AlarmZoneState] = {
     32768: AlarmZoneState.INHIBITED,
 }
 
-# Min wait time after login
-SLEEP = 0.5
+# Min wait time between http calls
+SLEEP_BETWEEN_CALLS = 0.25
 
 # DEFAULT POWER UNIT
 WATT = "W"

@@ -24,7 +24,7 @@ from .const import (
     LIGHT,
     OTHER,
     SCENARIO,
-    SLEEP,
+    SLEEP_BETWEEN_CALLS,
     STATE_COVER,
     STATE_ON,
     VEDO,
@@ -93,6 +93,7 @@ class ComelitCommonApi:
             "User-Agent": "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0",
             "Accept-Language": "en-GB,en;q=0.5",
             "X-Requested-With": "XMLHttpRequest",
+            "Connection": "keep-alive",
         }
         self._session: aiohttp.ClientSession
 
@@ -196,16 +197,7 @@ class ComelitCommonApi:
 
         self._session.cookie_jar.update_cookies(cookies, URL(self.base_url))
 
-        if await self._check_logged_in(host_type):
-            await asyncio.sleep(SLEEP)
-            return True
-
-        _LOGGER.warning(
-            "Authentication failed for host %s [%s]: generic error",
-            self.host,
-            host_type,
-        )
-        raise CannotAuthenticate
+        return await self._check_logged_in(host_type)
 
     async def logout(self) -> None:
         """Comelit Simple Home logout."""
@@ -390,6 +382,14 @@ class ComelitVedoApi(ComelitCommonApi):
         _LOGGER.debug(zone)
         return zone
 
+    async def _async_get_page_data(
+        self, desc: str, page: str
+    ) -> tuple[str, dict[str, Any]]:
+        """Return status and data from a specific GET query."""
+        reply_status, reply_json = await self._get_page_result(page)
+        _LOGGER.debug("Alarm %s: %s", desc, reply_json)
+        return reply_json["logged"], reply_json
+
     async def set_zone_status(
         self, index: int, action: str, force: bool = False
     ) -> bool:
@@ -419,24 +419,6 @@ class ComelitVedoApi(ComelitCommonApi):
         payload = {"code": self.device_pin}
         return await self._login(payload, VEDO)
 
-    async def get_area_status(
-        self, area: ComelitVedoAreaObject
-    ) -> ComelitVedoAreaObject:
-        """Get AREA status."""
-        reply_status, reply_json_area_stat = await self._get_page_result(
-            "/user/area_stat.json"
-        )
-        _LOGGER.debug("Alarm AREA statistics: %s", reply_json_area_stat)
-
-        if not reply_json_area_stat["logged"]:
-            raise CannotRetrieveData("Logged is 0 in /user/area_stat.json")
-
-        description = {"description": area.name, "p1_pres": area.p1, "p2_pres": area.p2}
-
-        return await self._create_area_object(
-            description, reply_json_area_stat, area.index
-        )
-
     async def get_all_areas_and_zones(
         self,
     ) -> dict[str, dict[int, Any]]:
@@ -451,11 +433,24 @@ class ComelitVedoApi(ComelitCommonApi):
         reply_json_data: list[dict[Any, Any]] = []
 
         for info in queries.values():
+            desc = info["desc"]
             page = info["page"]
-            reply_status, reply_json = await self._get_page_result(page)
-            _LOGGER.debug("Alarm %s: %s", info["desc"], reply_json)
-            if not reply_json["logged"]:
-                raise CannotRetrieveData(f"Logged is 0 in {page}")
+            _LOGGER.debug(
+                "Sleeping for %s seconds between each call", SLEEP_BETWEEN_CALLS
+            )
+            await asyncio.sleep(SLEEP_BETWEEN_CALLS)
+            reply_status, reply_json = await self._async_get_page_data(desc, page)
+            if not reply_status:
+                _LOGGER.info("Login expired accessing %s, re-login attempt", desc)
+                await self.login()
+                await asyncio.sleep(SLEEP_BETWEEN_CALLS)
+                reply_status, reply_json = await self._async_get_page_data(desc, page)
+                if not reply_status:
+                    raise CannotRetrieveData(
+                        "Login expired and not working after a retry"
+                    )
+                _LOGGER.info("Re-login successful")
+
             reply_json_data.append(reply_json)
 
         list_areas: list[int] = reply_json_data[0]["present"]
@@ -471,7 +466,12 @@ class ComelitVedoApi(ComelitCommonApi):
 
         list_zones: list[int] = reply_json_data[1]["present"]
         if "1" not in list_zones:
-            raise CannotRetrieveData("All zones not present in /user/zone_stat.json")
+            status, data = await self._async_get_page_data(
+                queries[2]["desc"], queries[2]["page"]
+            )
+            list_zones = data["present"]
+            if "1" not in list_zones:
+                raise CannotRetrieveData("All ZONE information are missing")
 
         zones = {}
         for i in range(len(list_zones)):
