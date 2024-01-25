@@ -318,6 +318,8 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
 class ComelitVedoApi(ComelitCommonApi):
     """Queries Comelit SimpleHome VEDO alarm."""
 
+    _json_data: list[dict[Any, Any]] = [{}, {}, {}, {}, {}]
+
     async def _translate_zone_status(
         self, zone: ComelitVedoZoneObject
     ) -> AlarmZoneState:
@@ -383,12 +385,13 @@ class ComelitVedoApi(ComelitCommonApi):
         return zone
 
     async def _async_get_page_data(
-        self, desc: str, page: str
-    ) -> tuple[str, dict[str, Any]]:
+        self, desc: str, page: str, present_check: str | int | None = None
+    ) -> tuple[bool, dict[str, Any]]:
         """Return status and data from a specific GET query."""
         reply_status, reply_json = await self._get_page_result(page)
         _LOGGER.debug("Alarm %s: %s", desc, reply_json)
-        return reply_json["logged"], reply_json
+        present = present_check in reply_json["present"] if "_desc" in page else True
+        return (reply_json["logged"] and present), reply_json
 
     async def set_zone_status(
         self, index: int, action: str, force: bool = False
@@ -419,67 +422,95 @@ class ComelitVedoApi(ComelitCommonApi):
         payload = {"code": self.device_pin}
         return await self._login(payload, VEDO)
 
+    async def get_area_status(
+        self, area: ComelitVedoAreaObject
+    ) -> ComelitVedoAreaObject:
+        """Get AREA status."""
+
+        reply_status, reply_json_area_stat = await self._async_get_page_data(
+            "AREA statistics", "/user/area_stat.json"
+        )
+        description = {"description": area.name, "p1_pres": area.p1, "p2_pres": area.p2}
+
+        return await self._create_area_object(
+            description, reply_json_area_stat, area.index
+        )
+
     async def get_all_areas_and_zones(
         self,
     ) -> dict[str, dict[int, Any]]:
         """Get all VEDO system AREA and ZONE."""
 
-        queries = {
-            1: {"desc": "AREA description", "page": "/user/area_desc.json"},
-            2: {"desc": "ZONE description", "page": "/user/zone_desc.json"},
-            3: {"desc": "AREA statistics", "page": "/user/area_stat.json"},
-            4: {"desc": "ZONE statistics", "page": "/user/zone_stat.json"},
+        queries: dict[int, dict[str, Any]] = {
+            1: {
+                "desc": "AREA description",
+                "page": "/user/area_desc.json",
+                "present": 1,
+            },
+            2: {
+                "desc": "ZONE description",
+                "page": "/user/zone_desc.json",
+                "present": "1",
+            },
+            3: {
+                "desc": "AREA statistics",
+                "page": "/user/area_stat.json",
+                "present": None,
+            },
+            4: {
+                "desc": "ZONE statistics",
+                "page": "/user/zone_stat.json",
+                "present": None,
+            },
         }
-        reply_json_data: list[dict[Any, Any]] = []
 
-        for info in queries.values():
+        for index, info in queries.items():
             desc = info["desc"]
             page = info["page"]
+            present = info["present"]
+            if "_desc" in page and self._json_data[index]:
+                _LOGGER.debug("Data for %s already retrieved, skipping", desc)
+                continue
             _LOGGER.debug(
                 "Sleeping for %s seconds between each call", SLEEP_BETWEEN_CALLS
             )
             await asyncio.sleep(SLEEP_BETWEEN_CALLS)
-            reply_status, reply_json = await self._async_get_page_data(desc, page)
+            reply_status, reply_json = await self._async_get_page_data(
+                desc, page, present
+            )
             if not reply_status:
                 _LOGGER.info("Login expired accessing %s, re-login attempt", desc)
                 await self.login()
                 await asyncio.sleep(SLEEP_BETWEEN_CALLS)
-                reply_status, reply_json = await self._async_get_page_data(desc, page)
+                reply_status, reply_json = await self._async_get_page_data(
+                    desc, page, present
+                )
                 if not reply_status:
                     raise CannotRetrieveData(
                         "Login expired and not working after a retry"
                     )
                 _LOGGER.info("Re-login successful")
+            self._json_data.insert(index, reply_json)
 
-            reply_json_data.append(reply_json)
-
-        list_areas: list[int] = reply_json_data[0]["present"]
+        list_areas: list[int] = self._json_data[1]["present"]
         areas = {}
         for i in range(len(list_areas)):
             if not list_areas[i]:
                 _LOGGER.debug("Alarm skipping non present AREA [%i]", i)
                 continue
             area = await self._create_area_object(
-                reply_json_data[0], reply_json_data[2], i
+                self._json_data[1], self._json_data[3], i
             )
             areas.update({i: area})
 
-        list_zones: list[int] = reply_json_data[1]["present"]
-        if "1" not in list_zones:
-            status, data = await self._async_get_page_data(
-                queries[2]["desc"], queries[2]["page"]
-            )
-            list_zones = data["present"]
-            if "1" not in list_zones:
-                raise CannotRetrieveData("All ZONE information are missing")
-
+        list_zones: list[int] = self._json_data[2]["present"]
         zones = {}
         for i in range(len(list_zones)):
             if not int(list_zones[i]):
                 _LOGGER.debug("Alarm skipping non present ZONE [%i]", i)
                 continue
             zone = await self._create_zone_object(
-                reply_json_data[1], reply_json_data[3], i
+                self._json_data[2], self._json_data[4], i
             )
             zones.update({i: zone})
 
