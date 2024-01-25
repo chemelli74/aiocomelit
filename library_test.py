@@ -1,8 +1,9 @@
 """Test script for aiocomelit library."""
-import argparse
-import ast
 import asyncio
+import json
 import logging
+import os
+from argparse import ArgumentParser, Namespace
 
 from colorlog import ColoredFormatter
 
@@ -30,9 +31,9 @@ from aiocomelit.exceptions import CannotAuthenticate, CannotConnect
 INDEX = 0
 
 
-def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
+def get_arguments() -> tuple[ArgumentParser, Namespace]:
     """Get parsed passed in arguments."""
-    parser = argparse.ArgumentParser(description="aiovodafone library test")
+    parser = ArgumentParser(description="aiocomelit library test")
     parser.add_argument(
         "--bridge",
         "-b",
@@ -78,11 +79,22 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
     parser.add_argument(
         "--test",
         "-t",
-        type=ast.literal_eval,
-        default=True,
+        type=str,
+        default="True",
         help="Execute test actions",
+    ),
+    parser.add_argument(
+        "--configfile",
+        "-cf",
+        type=str,
+        help="Load options from JSON config file. Command line options override those in the file.",
     )
     arguments = parser.parse_args()
+    if arguments.configfile:
+        # Re-parse the command line, taking the options in the optional JSON file as a basis
+        if os.path.exists(arguments.configfile):
+            with open(arguments.configfile) as f:
+                arguments = parser.parse_args(namespace=Namespace(**json.load(f)))
 
     return parser, arguments
 
@@ -107,13 +119,8 @@ async def execute_alarm_test(api: ComelitVedoApi, area: ComelitVedoAreaObject) -
     print("Status after: ", await api.get_area_status(area))
 
 
-async def main() -> None:
-    """Run main."""
-    parser, args = get_arguments()
-
-    print("-" * 20)
-    print(f"aiocomelit version: {__version__}")
-    print("-" * 20)
+async def bridge_test(args: Namespace) -> None:
+    """Test code for Comelit Serial Bridge."""
     bridge_api = ComeliteSerialBridgeApi(args.bridge, args.bridge_port, args.bridge_pin)
     logged = False
     try:
@@ -130,7 +137,7 @@ async def main() -> None:
     devices = await bridge_api.get_all_devices()
     print("Devices:", devices)
     print("-" * 20)
-    if args.test:
+    if args.test == "True":
         for device in devices[LIGHT].values():
             if device.index == INDEX:
                 await execute_device_test(bridge_api, device, LIGHT)
@@ -152,11 +159,9 @@ async def main() -> None:
     await bridge_api.logout()
     await bridge_api.close()
 
-    # VEDO system mandatorily requires a pin
-    if not args.vedo_pin:
-        print("VEDO, missing PIN. Skipping")
-        return
 
+async def vedo_test(args: Namespace) -> None:
+    """Test code for Comelit VEDO system."""
     vedo_api = ComelitVedoApi(args.vedo, args.vedo_port, args.vedo_pin)
     logged = False
     try:
@@ -179,12 +184,29 @@ async def main() -> None:
     for zone in alarm_data[ALARM_ZONES]:
         print(alarm_data[ALARM_ZONES][zone])
     print("-" * 20)
-    if args.test:
+    if args.test == "True":
         await execute_alarm_test(vedo_api, alarm_data[ALARM_AREAS][INDEX])
         print("-" * 20)
     print("Logout & close session")
     await vedo_api.logout()
     await vedo_api.close()
+
+
+async def main() -> None:
+    """Run main."""
+    parser, args = get_arguments()
+
+    print("-" * 20)
+    print(f"aiocomelit version: {__version__}")
+    print("-" * 20)
+    await bridge_test(args)
+
+    # VEDO system mandatorily requires a pin
+    if not args.vedo_pin:
+        print("Comelit VEDO System: missing PIN. Skipping tests")
+        parser.print_help()
+        return
+    await vedo_test(args)
 
 
 def set_logging() -> None:
