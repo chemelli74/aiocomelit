@@ -228,7 +228,7 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
 
         return "on" if dev_status == STATE_ON else "off"
 
-    async def set_clima_status(self, index: int, action: str, val: int = 0) -> bool:
+    async def set_clima_status(self, index: int, action: str, temp: float = 0) -> bool:
         """Set clima status.
 
         action:
@@ -236,7 +236,7 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
 
         """
         reply_status = await self._get_page_result(
-            f"/user/action.cgi?clima={index}&thermo={action}&val={val}", False
+            f"/user/action.cgi?clima={index}&thermo={action}&val={int(temp*10)}", False
         )
         return reply_status == 200
 
