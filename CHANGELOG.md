@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.8.2 (2024-01-25)
+
+### Fix
+
+- Move math to library (#89) ([`91a1a29`](https://github.com/chemelli74/aiocomelit/commit/91a1a2926eb245323617f3b72c1cd1b1adc44b5d))
+
+
 ## v0.8.1 (2024-01-25)
 
 ### Fix
