@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.8.1 (2024-01-25)
+
+### Fix
+
+- Move set_clima_status to the correct api (#88) ([`28848c8`](https://github.com/chemelli74/aiocomelit/commit/28848c8944c9031ba84afc83b5510415be8f33ec))
+
+
 ## v0.8.0 (2024-01-25)
 
 ### Feature
