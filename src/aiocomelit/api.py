@@ -417,6 +417,18 @@ class ComelitVedoApi(ComelitCommonApi):
         )
         return reply_status == 200
 
+    async def set_clima_status(self, index: int, action: str, val: int = 0) -> bool:
+        """Set clima status.
+
+        action:
+            auto, man, on, off, set
+
+        """
+        reply_status = await self._get_page_result(
+            f"/user/action.cgi?clima={index}&thermo={action}&val={val}", False
+        )
+        return reply_status == 200
+
     async def login(self) -> bool:
         """Login to VEDO system."""
         payload = {"code": self.device_pin}
