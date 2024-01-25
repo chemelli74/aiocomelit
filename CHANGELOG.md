@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.7.5 (2024-01-25)
+
+### Fix
+
+- Improve vedo config retrieval (#85) ([`3cf6a49`](https://github.com/chemelli74/aiocomelit/commit/3cf6a499714c42173c8c985043eb7a68731dd9d9))
+
+
 ## v0.7.4 (2024-01-22)
 
 ### Fix
