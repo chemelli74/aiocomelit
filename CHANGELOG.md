@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.8.0 (2024-01-25)
+
+### Feature
+
+- Clima set status (#86) ([`58e1691`](https://github.com/chemelli74/aiocomelit/commit/58e1691929e25dad26d267c91ff80e8655f10f39))
+
+
+### Refactor
+
+- Library_test.py params via json config file (#87) ([`0f46014`](https://github.com/chemelli74/aiocomelit/commit/0f4601449609e9e4b606008c433e40ad81f8b5b1))
+
+
 ## v0.7.5 (2024-01-25)
 
 ### Fix
