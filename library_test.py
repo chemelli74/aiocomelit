@@ -119,7 +119,7 @@ async def execute_alarm_test(api: ComelitVedoApi, area: ComelitVedoAreaObject) -
     print("Status after: ", await api.get_area_status(area))
 
 
-async def test_bridge(args: Namespace) -> None:
+async def bridge_test(args: Namespace) -> None:
     """Test code for Comelit Serial Bridge."""
     bridge_api = ComeliteSerialBridgeApi(args.bridge, args.bridge_port, args.bridge_pin)
     logged = False
@@ -160,7 +160,7 @@ async def test_bridge(args: Namespace) -> None:
     await bridge_api.close()
 
 
-async def test_vedo(args: Namespace) -> None:
+async def vedo_test(args: Namespace) -> None:
     """Test code for Comelit VEDO system."""
     vedo_api = ComelitVedoApi(args.vedo, args.vedo_port, args.vedo_pin)
     logged = False
@@ -199,14 +199,14 @@ async def main() -> None:
     print("-" * 20)
     print(f"aiocomelit version: {__version__}")
     print("-" * 20)
-    await test_bridge(args)
+    await bridge_test(args)
 
     # VEDO system mandatorily requires a pin
     if not args.vedo_pin:
         print("Comelit VEDO System: missing PIN. Skipping tests")
         parser.print_help()
         return
-    await test_vedo(args)
+    await vedo_test(args)
 
 
 def set_logging() -> None:
