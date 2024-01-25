@@ -228,6 +228,18 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
 
         return "on" if dev_status == STATE_ON else "off"
 
+    async def set_clima_status(self, index: int, action: str, val: int = 0) -> bool:
+        """Set clima status.
+
+        action:
+            auto, man, on, off, set
+
+        """
+        reply_status = await self._get_page_result(
+            f"/user/action.cgi?clima={index}&thermo={action}&val={val}", False
+        )
+        return reply_status == 200
+
     async def set_device_status(
         self, device_type: str, index: int, action: int
     ) -> bool:
@@ -414,18 +426,6 @@ class ComelitVedoApi(ComelitCommonApi):
 
         reply_status = await self._get_page_result(
             f"/action.cgi?vedo=1&{action}={index}&force={int(force)}", False
-        )
-        return reply_status == 200
-
-    async def set_clima_status(self, index: int, action: str, val: int = 0) -> bool:
-        """Set clima status.
-
-        action:
-            auto, man, on, off, set
-
-        """
-        reply_status = await self._get_page_result(
-            f"/user/action.cgi?clima={index}&thermo={action}&val={val}", False
         )
         return reply_status == 200
 
