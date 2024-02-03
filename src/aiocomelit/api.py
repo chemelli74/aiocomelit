@@ -167,6 +167,11 @@ class ComelitCommonApi:
 
         return logged
 
+    async def _sleep_between_call(self) -> None:
+        """Sleep between one call and the next one."""
+        _LOGGER.debug("Sleeping for %s seconds before next call", SLEEP_BETWEEN_CALLS)
+        await asyncio.sleep(SLEEP_BETWEEN_CALLS)
+
     @abstractmethod
     async def login(self) -> bool:
         """Login to Comelit device."""
@@ -483,17 +488,14 @@ class ComelitVedoApi(ComelitCommonApi):
             if "_desc" in page and self._json_data[index]:
                 _LOGGER.debug("Data for %s already retrieved, skipping", desc)
                 continue
-            _LOGGER.debug(
-                "Sleeping for %s seconds between each call", SLEEP_BETWEEN_CALLS
-            )
-            await asyncio.sleep(SLEEP_BETWEEN_CALLS)
+            await self._sleep_between_call()
             reply_status, reply_json = await self._async_get_page_data(
                 desc, page, present
             )
             if not reply_status:
                 _LOGGER.info("Login expired accessing %s, re-login attempt", desc)
                 await self.login()
-                await asyncio.sleep(SLEEP_BETWEEN_CALLS)
+                await self._sleep_between_call()
                 reply_status, reply_json = await self._async_get_page_data(
                     desc, page, present
                 )
