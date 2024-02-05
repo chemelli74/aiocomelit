@@ -24,7 +24,8 @@ from .const import (
     LIGHT,
     OTHER,
     SCENARIO,
-    SLEEP_BETWEEN_CALLS,
+    SLEEP_BETWEEN_BRIDGE_CALLS,
+    SLEEP_BETWEEN_VEDO_CALLS,
     STATE_COVER,
     STATE_ON,
     VEDO,
@@ -167,10 +168,10 @@ class ComelitCommonApi:
 
         return logged
 
-    async def _sleep_between_call(self) -> None:
+    async def _sleep_between_call(self, seconds: float) -> None:
         """Sleep between one call and the next one."""
-        _LOGGER.debug("Sleeping for %s seconds before next call", SLEEP_BETWEEN_CALLS)
-        await asyncio.sleep(SLEEP_BETWEEN_CALLS)
+        _LOGGER.debug("Sleeping for %s seconds before next call", seconds)
+        await asyncio.sleep(seconds)
 
     @abstractmethod
     async def login(self) -> bool:
@@ -224,6 +225,8 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
         """Initialize the session."""
         super().__init__(host, port, bridge_pin)
         self._devices: dict[str, dict[int, ComelitSerialBridgeObject]] = {}
+        self._last_clima_command: datetime | None = None
+        self._semaphore = asyncio.Semaphore()
 
     async def _translate_device_status(self, dev_type: str, dev_status: int) -> str:
         """Makes status human readable."""
@@ -240,9 +243,23 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
             auto, man, on, off, set
 
         """
+        await self._semaphore.acquire()
+        if self._last_clima_command:
+            delta_seconds = SLEEP_BETWEEN_BRIDGE_CALLS - round(
+                (datetime.now() - self._last_clima_command).total_seconds(), 2
+            )
+            if delta_seconds > 0:
+                _LOGGER.debug(
+                    "Climate calls needs to be queued (%ss) for proper execution",
+                    delta_seconds,
+                )
+                await self._sleep_between_call(delta_seconds)
+
         reply_status = await self._get_page_result(
             f"/user/action.cgi?clima={index}&thermo={action}&val={int(temp*10)}", False
         )
+        self._last_clima_command = datetime.now()
+        self._semaphore.release()
         return reply_status == 200
 
     async def set_device_status(
@@ -488,14 +505,14 @@ class ComelitVedoApi(ComelitCommonApi):
             if "_desc" in page and self._json_data[index]:
                 _LOGGER.debug("Data for %s already retrieved, skipping", desc)
                 continue
-            await self._sleep_between_call()
+            await self._sleep_between_call(SLEEP_BETWEEN_VEDO_CALLS)
             reply_status, reply_json = await self._async_get_page_data(
                 desc, page, present
             )
             if not reply_status:
                 _LOGGER.info("Login expired accessing %s, re-login attempt", desc)
                 await self.login()
-                await self._sleep_between_call()
+                await self._sleep_between_call(SLEEP_BETWEEN_VEDO_CALLS)
                 reply_status, reply_json = await self._async_get_page_data(
                     desc, page, present
                 )
