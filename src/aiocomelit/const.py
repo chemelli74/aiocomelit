@@ -77,7 +77,8 @@ ALARM_ZONE_STATUS: dict[int, AlarmZoneState] = {
 }
 
 # Min wait time between http calls
-SLEEP_BETWEEN_CALLS = 0.25
+SLEEP_BETWEEN_BRIDGE_CALLS = 1.5
+SLEEP_BETWEEN_VEDO_CALLS = 0.25
 
 # DEFAULT POWER UNIT
 WATT = "W"
