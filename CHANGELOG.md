@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.8.3 (2024-02-05)
+
+### Fix
+
+- Queue clima calls (#97) ([`90ea471`](https://github.com/chemelli74/aiocomelit/commit/90ea4712beab163ea28de018524972761b176be7))
+
+
+### Chore
+
+- Sleep cleanup (#96) ([`9550197`](https://github.com/chemelli74/aiocomelit/commit/95501978d6a623220fe712b7878c118dae121c00))
+- Upgrade dependencies (#95) ([`95f6627`](https://github.com/chemelli74/aiocomelit/commit/95f66278a2e18a1edee5250be014e72ec0d141b6))
+- Bump codecov/codecov-action from 3 to 4 (#94) ([`b9815e8`](https://github.com/chemelli74/aiocomelit/commit/b9815e8c16f0b797c067d22c70aeffd18be7d141))
+- Bump tiangolo/issue-manager from 0.4.1 to 0.5.0 (#93) ([`7564b2e`](https://github.com/chemelli74/aiocomelit/commit/7564b2ee62ab10bd2921f0bcb0967f465e540c70))
+- Bump aiohttp from 3.9.1 to 3.9.2 (#91) ([`82b256b`](https://github.com/chemelli74/aiocomelit/commit/82b256b7c615cc152d5fd91e519736a274002525))
+- Bump colorlog from 6.8.0 to 6.8.2 (#92) ([`3ba4cb4`](https://github.com/chemelli74/aiocomelit/commit/3ba4cb4454ab12a0020e7eae099d337592457e75))
+- Bump pytest from 7.4.4 to 8.0.0 (#90) ([`449c573`](https://github.com/chemelli74/aiocomelit/commit/449c57350086466bd205b0b90d0d15b4a73b793d))
+
+
 ## v0.8.2 (2024-01-25)
 
 ### Fix
