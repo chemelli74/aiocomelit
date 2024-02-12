@@ -1,4 +1,5 @@
 """Support for Comelit SimpleHome."""
+
 import asyncio
 import functools
 from abc import abstractmethod
@@ -338,9 +339,11 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
                     type=dev_type,
                     val=reply_json["val"][i],
                     protected=reply_json["protected"][i],
-                    zone=reply_json["env_desc"][reply_json["env"][i]]
-                    if not dev_type == SCENARIO
-                    else "",
+                    zone=(
+                        reply_json["env_desc"][reply_json["env"][i]]
+                        if not dev_type == SCENARIO
+                        else ""
+                    ),
                     power=power,
                 )
                 devices.update({i: dev_info})

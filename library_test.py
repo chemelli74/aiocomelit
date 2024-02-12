@@ -1,4 +1,5 @@
 """Test script for aiocomelit library."""
+
 import asyncio
 import json
 import logging

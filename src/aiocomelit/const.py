@@ -1,4 +1,5 @@
 """Constants for Comelit Simple Home."""
+
 import logging
 from enum import Enum
 
