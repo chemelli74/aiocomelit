@@ -236,9 +236,10 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
 
         return "on" if dev_status == STATE_ON else "off"
 
-    async def set_clima_status(self, index: int, action: str, temp: float = 0) -> bool:
-        """Set clima status.
-
+    async def _set_thermo_humi_status(
+        self, index: int, mode: str, action: str, value: float = 0
+    ) -> bool:
+        """Set clima or humidity status.
         action:
             auto, man, on, off, set
 
@@ -256,11 +257,21 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
                 await self._sleep_between_call(delta_seconds)
 
         reply_status = await self._get_page_result(
-            f"/user/action.cgi?clima={index}&thermo={action}&val={int(temp*10)}", False
+            f"/user/action.cgi?clima={index}&{mode}={action}&val={int(value*10)}", False
         )
         self._last_clima_command = datetime.now()
         self._semaphore.release()
         return reply_status == 200
+
+    async def set_clima_status(self, index: int, action: str, temp: float = 0) -> bool:
+        """Set clima status."""
+        return await self._set_thermo_humi_status(index, "thermo", action, temp)
+
+    async def set_humidity_status(
+        self, index: int, action: str, humidity: float = 0
+    ) -> bool:
+        """Set humidity status."""
+        return await self._set_thermo_humi_status(index, "humi", action, humidity)
 
     async def set_device_status(
         self, device_type: str, index: int, action: int
