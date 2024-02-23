@@ -1,5 +1,25 @@
 # Changelog
 
+## v0.9.0 (2024-02-23)
+
+### Feature
+
+- Add humidity management (#100) ([`1f7b9a9`](https://github.com/chemelli74/aiocomelit/commit/1f7b9a9e6b0c333bc7311c1e2a8fd40288e28394))
+
+
+### Chore
+
+- Pre-commit autoupdate (#102) ([`9c73d5c`](https://github.com/chemelli74/aiocomelit/commit/9c73d5cfc2b94df97f921e7bc74c5d3536cfc577))
+- Pre-commit autoupdate (#84) ([`2927490`](https://github.com/chemelli74/aiocomelit/commit/29274902273b57bb48e162a27cd186447755e6d3))
+- Bump pytest from 8.0.0 to 8.0.1 (#99) ([`5150f09`](https://github.com/chemelli74/aiocomelit/commit/5150f092c92c3acadc430d92bbd8832ffeb70f24))
+- Bump pre-commit/action from 3.0.0 to 3.0.1 (#98) ([`eaa57e7`](https://github.com/chemelli74/aiocomelit/commit/eaa57e7acea64ed564de6aa85f5748da9288054b))
+
+
+### Build
+
+- Revert config change for actions/checkout@v4 (#101) ([`0235b7c`](https://github.com/chemelli74/aiocomelit/commit/0235b7c935abf32c2dacc7b2265054a5b65d126d))
+
+
 ## v0.8.3 (2024-02-05)
 
 ### Fix
