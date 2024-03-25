@@ -4,9 +4,10 @@ import asyncio
 import functools
 from abc import abstractmethod
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
+from http import HTTPStatus
 from http.cookies import SimpleCookie
-from typing import Any
+from typing import Any, ClassVar, cast
 
 import aiohttp
 import pint
@@ -92,7 +93,10 @@ class ComelitCommonApi:
         self.device_pin = pin
         self.base_url = f"http://{host}:{port}"
         self._headers = {
-            "User-Agent": "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0",
+            "User-Agent": (
+                "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:78.0"
+                "Gecko/20100101 Firefox/78.0"
+            ),
             "Accept-Language": "en-GB,en;q=0.5",
             "X-Requested-With": "XMLHttpRequest",
             "Connection": "keep-alive",
@@ -100,11 +104,13 @@ class ComelitCommonApi:
         self._session: aiohttp.ClientSession
 
     async def _get_page_result(
-        self, page: str, reply_json: bool = True
+        self,
+        page: str,
+        reply_json: bool = True,
     ) -> tuple[int, dict[str, Any]]:
         """Return status and data from a GET query."""
         _LOGGER.debug("GET page %s [%s]", page, self.host)
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        timestamp = datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M:%S")
         url = f"{self.base_url}{page}&_={timestamp}"
         try:
             response = await self._session.get(
@@ -112,12 +118,16 @@ class ComelitCommonApi:
                 headers=self._headers,
                 timeout=10,
             )
-        except (asyncio.TimeoutError, aiohttp.ClientConnectorError) as exc:
+        except (TimeoutError, aiohttp.ClientConnectorError) as exc:
             raise CannotConnect("Connection error during GET") from exc
 
-        _LOGGER.debug("GET response %s [%s]", await response.text(), self.host)
+        _LOGGER.debug(
+            "GET response %s [%s]",
+            await response.text(),
+            self.host,
+        )
 
-        if response.status != 200:
+        if response.status != HTTPStatus.OK:
             raise CannotRetrieveData(f"GET response status {response.status}")
 
         if not reply_json:
@@ -127,7 +137,9 @@ class ComelitCommonApi:
         return response.status, await response.json()
 
     async def _post_page_result(
-        self, page: str, payload: dict[str, Any]
+        self,
+        page: str,
+        payload: dict[str, Any],
     ) -> SimpleCookie:
         """Return status and data from a POST query."""
         _LOGGER.debug("POST page %s [%s]", page, self.host)
@@ -139,15 +151,15 @@ class ComelitCommonApi:
                 headers=self._headers,
                 timeout=10,
             )
-        except (asyncio.TimeoutError, aiohttp.ClientConnectorError) as exc:
+        except (TimeoutError, aiohttp.ClientConnectorError) as exc:
             raise CannotConnect("Connection error during POST") from exc
 
         _LOGGER.debug("POST response %s [%s]", await response.text(), self.host)
 
-        if response.status != 200:
+        if response.status != HTTPStatus.OK:
             raise CannotRetrieveData(f"POST response status {response.status}")
 
-        return response.cookies
+        return cast(SimpleCookie, response.cookies)
 
     async def _is_session_active(self) -> bool:
         """Check if aiohttp session is still active."""
@@ -158,9 +170,9 @@ class ComelitCommonApi:
 
     async def _check_logged_in(self, host_type: str) -> bool:
         """Check if login is active."""
-
         reply_status, reply_json = await self._get_page_result("/login.json")
 
+        logged: bool
         _LOGGER.debug("%s login reply: %s", host_type, reply_json)
         if host_type == BRIDGE:
             logged = reply_json["domus"] != "000000000000"
@@ -230,17 +242,21 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
         self._semaphore = asyncio.Semaphore()
 
     async def _translate_device_status(self, dev_type: str, dev_status: int) -> str:
-        """Makes status human readable."""
-
+        """Make status human readable."""
         if dev_type == COVER:
             return STATE_COVER[dev_status]
 
         return "on" if dev_status == STATE_ON else "off"
 
     async def _set_thermo_humi_status(
-        self, index: int, mode: str, action: str, value: float = 0
+        self,
+        index: int,
+        mode: str,
+        action: str,
+        value: float = 0,
     ) -> bool:
         """Set clima or humidity status.
+
         action:
             auto, man, on, off, set
 
@@ -248,7 +264,8 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
         await self._semaphore.acquire()
         if self._last_clima_command:
             delta_seconds = SLEEP_BETWEEN_BRIDGE_CALLS - round(
-                (datetime.now() - self._last_clima_command).total_seconds(), 2
+                (datetime.now(tz=UTC) - self._last_clima_command).total_seconds(),
+                2,
             )
             if delta_seconds > 0:
                 _LOGGER.debug(
@@ -257,25 +274,32 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
                 )
                 await self._sleep_between_call(delta_seconds)
 
-        reply_status = await self._get_page_result(
-            f"/user/action.cgi?clima={index}&{mode}={action}&val={int(value*10)}", False
+        reply_status, reply_json = await self._get_page_result(
+            f"/user/action.cgi?clima={index}&{mode}={action}&val={int(value*10)}",
+            False,
         )
-        self._last_clima_command = datetime.now()
+        self._last_clima_command = datetime.now(tz=UTC)
         self._semaphore.release()
-        return reply_status == 200
+        return reply_status == HTTPStatus.OK
 
     async def set_clima_status(self, index: int, action: str, temp: float = 0) -> bool:
         """Set clima status."""
         return await self._set_thermo_humi_status(index, "thermo", action, temp)
 
     async def set_humidity_status(
-        self, index: int, action: str, humidity: float = 0
+        self,
+        index: int,
+        action: str,
+        humidity: float = 0,
     ) -> bool:
         """Set humidity status."""
         return await self._set_thermo_humi_status(index, "humi", action, humidity)
 
     async def set_device_status(
-        self, device_type: str, index: int, action: int
+        self,
+        device_type: str,
+        index: int,
+        action: int,
     ) -> bool:
         """Set device action.
 
@@ -284,20 +308,24 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
             1 = on/open
 
         """
-        reply_status = await self._get_page_result(
-            f"/user/action.cgi?type={device_type}&num{action}={index}", False
+        reply_status, reply_json = await self._get_page_result(
+            f"/user/action.cgi?type={device_type}&num{action}={index}",
+            False,
         )
-        return reply_status == 200
+        return reply_status == HTTPStatus.OK
 
     async def get_device_status(self, device_type: str, index: int) -> int:
         """Get device status."""
         reply_status, reply_json = await self._get_page_result(
-            f"/user/icon_status.json?type={device_type}"
+            f"/user/icon_status.json?type={device_type}",
         )
         _LOGGER.debug(
-            "Device %s[%s] status: %s", device_type, index, reply_json["status"][index]
+            "Device %s[%s] status: %s",
+            device_type,
+            index,
+            reply_json["status"][index],
         )
-        return reply_json["status"][index]
+        return cast(int, reply_json["status"][index])
 
     async def login(self) -> bool:
         """Login to Serial Bridge device."""
@@ -306,18 +334,18 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
 
     async def get_all_devices(self) -> dict[str, dict[int, ComelitSerialBridgeObject]]:
         """Get all connected devices."""
-
         _LOGGER.debug("Getting all devices for host %s", self.host)
 
         loop = asyncio.get_running_loop()
         ureg = await loop.run_in_executor(
-            None, functools.partial(pint.UnitRegistry, cache_folder=":auto:")
+            None,
+            functools.partial(pint.UnitRegistry, cache_folder=":auto:"),
         )
         ureg.default_format = "~"
 
         for dev_type in (CLIMATE, COVER, LIGHT, IRRIGATION, OTHER, SCENARIO):
             reply_status, reply_json = await self._get_page_result(
-                f"/user/icon_desc.json?type={dev_type}"
+                f"/user/icon_desc.json?type={dev_type}",
             )
             _LOGGER.debug(
                 "List of devices of type %s: %s",
@@ -327,11 +355,11 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
             reply_counter_json: dict[str, Any] = {}
             if dev_type == OTHER and reply_json["num"] > 0:
                 reply_status, reply_counter_json = await self._get_page_result(
-                    "/user/counter.json"
+                    "/user/counter.json",
                 )
             devices = {}
             for i in range(reply_json["num"]):
-                # Guard against "scenario", that has 32 devices even if none is configured
+                # Guard against "scenario": list 32 devices even if none is configured
                 if reply_json["desc"][i] == "":
                     continue
                 status = reply_json["status"][i]
@@ -340,7 +368,9 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
                     instant = ureg(instant_values[i])
                     if not instant.dimensionless:
                         power = ureg.convert(
-                            instant.magnitude, str(instant.units), WATT
+                            instant.magnitude,
+                            str(instant.units),
+                            WATT,
                         )
                 dev_info = ComelitSerialBridgeObject(
                     index=i,
@@ -352,7 +382,7 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
                     protected=reply_json["protected"][i],
                     zone=(
                         reply_json["env_desc"][reply_json["env"][i]]
-                        if not dev_type == SCENARIO
+                        if dev_type != SCENARIO
                         else ""
                     ),
                     power=power,
@@ -366,13 +396,13 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
 class ComelitVedoApi(ComelitCommonApi):
     """Queries Comelit SimpleHome VEDO alarm."""
 
-    _json_data: list[dict[Any, Any]] = [{}, {}, {}, {}, {}]
+    _json_data: ClassVar[list[dict[Any, Any]]] = [{}, {}, {}, {}, {}]
 
     async def _translate_zone_status(
-        self, zone: ComelitVedoZoneObject
+        self,
+        zone: ComelitVedoZoneObject,
     ) -> AlarmZoneState:
         """Translate ZONE status."""
-
         for status in ALARM_ZONE_STATUS:
             if zone.status & status != 0:
                 return ALARM_ZONE_STATUS[status]
@@ -380,10 +410,10 @@ class ComelitVedoApi(ComelitCommonApi):
         return AlarmZoneState.REST
 
     async def _translate_area_status(
-        self, area: ComelitVedoAreaObject
+        self,
+        area: ComelitVedoAreaObject,
     ) -> AlarmAreaState:
         """Translate AREA status."""
-
         for field in ALARM_AREA_STATUS:
             if getattr(area, field):
                 return ALARM_AREA_STATUS[field]
@@ -391,10 +421,12 @@ class ComelitVedoApi(ComelitCommonApi):
         return AlarmAreaState.DISARMED
 
     async def _create_area_object(
-        self, json_area_desc: dict[str, Any], json_area_stat: dict[str, Any], index: int
+        self,
+        json_area_desc: dict[str, Any],
+        json_area_stat: dict[str, Any],
+        index: int,
     ) -> ComelitVedoAreaObject:
         """Get area status."""
-
         area = ComelitVedoAreaObject(
             index=index,
             name=json_area_desc["description"][index],
@@ -415,10 +447,12 @@ class ComelitVedoApi(ComelitCommonApi):
         return area
 
     async def _create_zone_object(
-        self, json_zone_desc: dict[str, Any], json_zone_stat: dict[str, Any], index: int
+        self,
+        json_zone_desc: dict[str, Any],
+        json_zone_stat: dict[str, Any],
+        index: int,
     ) -> ComelitVedoZoneObject:
         """Create zone object."""
-
         status_api = json_zone_stat["status"].split(",")[index]
 
         zone = ComelitVedoZoneObject(
@@ -433,7 +467,10 @@ class ComelitVedoApi(ComelitCommonApi):
         return zone
 
     async def _async_get_page_data(
-        self, desc: str, page: str, present_check: str | int | None = None
+        self,
+        desc: str,
+        page: str,
+        present_check: str | int | None = None,
     ) -> tuple[bool, dict[str, Any]]:
         """Return status and data from a specific GET query."""
         reply_status, reply_json = await self._get_page_result(page)
@@ -442,7 +479,10 @@ class ComelitVedoApi(ComelitCommonApi):
         return (reply_json["logged"] and present), reply_json
 
     async def set_zone_status(
-        self, index: int, action: str, force: bool = False
+        self,
+        index: int,
+        action: str,
+        force: bool = False,
     ) -> bool:
         """Set zone action.
 
@@ -459,11 +499,11 @@ class ComelitVedoApi(ComelitCommonApi):
             True  = force action
 
         """
-
-        reply_status = await self._get_page_result(
-            f"/action.cgi?vedo=1&{action}={index}&force={int(force)}", False
+        reply_status, reply_json = await self._get_page_result(
+            f"/action.cgi?vedo=1&{action}={index}&force={int(force)}",
+            False,
         )
-        return reply_status == 200
+        return reply_status == HTTPStatus.OK
 
     async def login(self) -> bool:
         """Login to VEDO system."""
@@ -471,24 +511,26 @@ class ComelitVedoApi(ComelitCommonApi):
         return await self._login(payload, VEDO)
 
     async def get_area_status(
-        self, area: ComelitVedoAreaObject
+        self,
+        area: ComelitVedoAreaObject,
     ) -> ComelitVedoAreaObject:
         """Get AREA status."""
-
         reply_status, reply_json_area_stat = await self._async_get_page_data(
-            "AREA statistics", "/user/area_stat.json"
+            "AREA statistics",
+            "/user/area_stat.json",
         )
         description = {"description": area.name, "p1_pres": area.p1, "p2_pres": area.p2}
 
         return await self._create_area_object(
-            description, reply_json_area_stat, area.index
+            description,
+            reply_json_area_stat,
+            area.index,
         )
 
     async def get_all_areas_and_zones(
         self,
     ) -> dict[str, dict[int, Any]]:
         """Get all VEDO system AREA and ZONE."""
-
         queries: dict[int, dict[str, Any]] = {
             1: {
                 "desc": "AREA description",
@@ -521,18 +563,22 @@ class ComelitVedoApi(ComelitCommonApi):
                 continue
             await self._sleep_between_call(SLEEP_BETWEEN_VEDO_CALLS)
             reply_status, reply_json = await self._async_get_page_data(
-                desc, page, present
+                desc,
+                page,
+                present,
             )
             if not reply_status:
                 _LOGGER.info("Login expired accessing %s, re-login attempt", desc)
                 await self.login()
                 await self._sleep_between_call(SLEEP_BETWEEN_VEDO_CALLS)
                 reply_status, reply_json = await self._async_get_page_data(
-                    desc, page, present
+                    desc,
+                    page,
+                    present,
                 )
                 if not reply_status:
                     raise CannotRetrieveData(
-                        "Login expired and not working after a retry"
+                        "Login expired and not working after a retry",
                     )
                 _LOGGER.info("Re-login successful")
             self._json_data.insert(index, reply_json)
@@ -544,7 +590,9 @@ class ComelitVedoApi(ComelitCommonApi):
                 _LOGGER.debug("Alarm skipping non present AREA [%i]", i)
                 continue
             area = await self._create_area_object(
-                self._json_data[1], self._json_data[3], i
+                self._json_data[1],
+                self._json_data[3],
+                i,
             )
             areas.update({i: area})
 
@@ -555,7 +603,9 @@ class ComelitVedoApi(ComelitCommonApi):
                 _LOGGER.debug("Alarm skipping non present ZONE [%i]", i)
                 continue
             zone = await self._create_zone_object(
-                self._json_data[2], self._json_data[4], i
+                self._json_data[2],
+                self._json_data[4],
+                i,
             )
             zones.update({i: zone})
 

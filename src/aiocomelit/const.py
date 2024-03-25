@@ -25,6 +25,8 @@ STATE_ON = 1
 
 # Alarm specific
 class AlarmAreaState(Enum):
+    """Alarm area states."""
+
     ANOMALY = "anomaly"
     ARMED = "armed"
     DISARMED = "disarmed"
@@ -36,6 +38,8 @@ class AlarmAreaState(Enum):
 
 
 class AlarmZoneState(Enum):
+    """Alarm zone states."""
+
     ALARM = "alarm"
     ARMED = "armed"
     OPEN = "open"
