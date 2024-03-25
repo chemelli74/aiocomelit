@@ -1,3 +1,5 @@
+"""Base tests for aiocomelit."""
+
 from aiocomelit.api import (
     ComeliteSerialBridgeApi,
     ComelitSerialBridgeObject,
@@ -13,7 +15,8 @@ from aiocomelit.exceptions import (
 )
 
 
-def test_objects_can_be_imported():
+def test_objects_can_be_imported() -> None:
+    """Verify objects exist."""
     assert type(ComeliteSerialBridgeApi)
     assert type(ComelitSerialBridgeObject)
     assert type(ComelitVedoApi)

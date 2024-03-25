@@ -3,10 +3,9 @@
 import asyncio
 import json
 import logging
-import os
+import sys
 from argparse import ArgumentParser, Namespace
-
-from colorlog import ColoredFormatter
+from pathlib import Path
 
 from aiocomelit import __version__
 from aiocomelit.api import (
@@ -28,6 +27,7 @@ from aiocomelit.const import (
     VEDO,
 )
 from aiocomelit.exceptions import CannotAuthenticate, CannotConnect
+from colorlog import ColoredFormatter
 
 INDEX = 0
 
@@ -83,28 +83,30 @@ def get_arguments() -> tuple[ArgumentParser, Namespace]:
         type=str,
         default="True",
         help="Execute test actions",
-    ),
+    )
     parser.add_argument(
         "--configfile",
         "-cf",
         type=str,
-        help="Load options from JSON config file. Command line options override those in the file.",
+        help="Load options from JSON config file. \
+        Command line options override those in the file.",
     )
     arguments = parser.parse_args()
-    if arguments.configfile:
-        # Re-parse the command line, taking the options in the optional JSON file as a basis
-        if os.path.exists(arguments.configfile):
-            with open(arguments.configfile) as f:
-                arguments = parser.parse_args(namespace=Namespace(**json.load(f)))
+    # Re-parse the command line
+    # taking the options in the optional JSON file as a basis
+    if arguments.configfile and Path.exists(arguments.configfile):
+        with Path.open(arguments.configfile) as f:
+            arguments = parser.parse_args(namespace=Namespace(**json.load(f)))
 
     return parser, arguments
 
 
 async def execute_device_test(
-    api: ComeliteSerialBridgeApi, device: ComelitSerialBridgeObject, dev_type: str
+    api: ComeliteSerialBridgeApi,
+    device: ComelitSerialBridgeObject,
+    dev_type: str,
 ) -> None:
     """Execute a test routine on a specific device type."""
-
     print(f"Test {dev_type} device: {device.name}")
     print("Status before: ", await api.get_device_status(dev_type, device.index))
     await api.set_device_status(dev_type, device.index, STATE_ON)
@@ -113,7 +115,6 @@ async def execute_device_test(
 
 async def execute_alarm_test(api: ComelitVedoApi, area: ComelitVedoAreaObject) -> None:
     """Execute a test routine on a specific VEDO zone."""
-
     print(f"Test zone: {area.name}")
     print("Status before: ", await api.get_area_status(area))
     await api.set_zone_status(area.index, ALARM_ENABLE)
@@ -132,7 +133,7 @@ async def bridge_test(args: Namespace) -> None:
         if not logged:
             print(f"Unable to login to {BRIDGE} [{bridge_api.host}]")
             await bridge_api.close()
-            exit(1)
+            sys.exit(1)
     print("Logged:", logged)
     print("-" * 20)
     devices = await bridge_api.get_all_devices()
@@ -173,7 +174,7 @@ async def vedo_test(args: Namespace) -> None:
         if not logged:
             print(f"Unable to login to {VEDO} [{vedo_api.host}]")
             await vedo_api.close()
-            exit(1)
+            sys.exit(1)
     print("Logged:", logged)
     print("-" * 20)
     alarm_data = await vedo_api.get_all_areas_and_zones()
@@ -211,6 +212,7 @@ async def main() -> None:
 
 
 def set_logging() -> None:
+    """Set logging levels."""
     logging.basicConfig(level=logging.DEBUG)
     logging.getLogger("asyncio").setLevel(logging.INFO)
     logging.getLogger("charset_normalizer").setLevel(logging.INFO)
@@ -230,9 +232,8 @@ def set_logging() -> None:
                 "ERROR": "red",
                 "CRITICAL": "red",
             },
-        )
+        ),
     )
-    return
 
 
 if __name__ == "__main__":
