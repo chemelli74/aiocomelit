@@ -53,9 +53,8 @@ exclude_lines = [
     'if __name__ == "__main__":',
 ]
 
-[tool.isort]
-profile = "black"
-known_first_party = ["aiocomelit", "tests"]
+[tool.ruff.isort]
+known-first-party = ["aioamazondevices", "tests"]
 
 [tool.mypy]
 check_untyped_defs = true
