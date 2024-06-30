@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aiocomelit"
-version = "0.9.0"
+version = "0.9.1"
 description = "Python library to control Comelit Simplehome"
 authors = ["Simone Chemelli <simone.chemelli@gmail.com>"]
 readme = "README.md"
