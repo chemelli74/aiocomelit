@@ -485,13 +485,13 @@ files = [
 
 [[package]]
 name = "pint"
-version = "0.24"
+version = "0.24.1"
 description = "Physical quantities module"
 optional = false
-python-versions = ">=3.10"
+python-versions = ">=3.9"
 files = [
-    {file = "Pint-0.24-py3-none-any.whl", hash = "sha256:c82fe82b30421817f9baa869df770bfed841c4a62bd5ef015942a0ea69e7282f"},
-    {file = "pint-0.24.tar.gz", hash = "sha256:c6c7c027b821413db1ac46b3b7bd296592848b5aec29a88cfc6e378fd1371903"},
+    {file = "Pint-0.24.1-py3-none-any.whl", hash = "sha256:69b05357c4cb2ac8f3346e235aff4477447e2f56805a79a4f59a2b6d5fc32020"},
+    {file = "pint-0.24.1.tar.gz", hash = "sha256:8849fe9d7b8532e5a5dc41e719e9e19268e18eac179d9a5645f21929a2a15caf"},
 ]
 
 [package.dependencies]
