@@ -163,10 +163,7 @@ class ComelitCommonApi:
 
     async def _is_session_active(self) -> bool:
         """Check if aiohttp session is still active."""
-        if not hasattr(self, "_session") or self._session.closed:
-            return False
-
-        return True
+        return hasattr(self, "_session") and not self._session.closed
 
     async def _check_logged_in(self, host_type: str) -> bool:
         """Check if login is active."""
