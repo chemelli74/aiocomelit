@@ -7,6 +7,8 @@ import sys
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
+from colorlog import ColoredFormatter
+
 from aiocomelit import __version__
 from aiocomelit.api import (
     ComeliteSerialBridgeApi,
@@ -27,7 +29,6 @@ from aiocomelit.const import (
     VEDO,
 )
 from aiocomelit.exceptions import CannotAuthenticate, CannotConnect
-from colorlog import ColoredFormatter
 
 INDEX = 0
 
