@@ -2,6 +2,5 @@
 source = aiocomelit
 omit =
     src/aiocomelit/api.py
-    src/aiocomelit/const.py
     src/aiocomelit/exceptions.py
     library_test.py
