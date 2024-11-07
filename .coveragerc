@@ -1,8 +1,6 @@
 [run]
 source = aiocomelit
 omit =
-    src/aiocomelit/__init__.py
     src/aiocomelit/api.py
-    src/aiocomelit/const.py
     src/aiocomelit/exceptions.py
     library_test.py
