@@ -17,13 +17,13 @@ from .exceptions import (
 )
 
 __all__ = [
-    "ComeliteSerialBridgeApi",
+    "CannotAuthenticate",
+    "CannotConnect",
+    "CannotRetrieveData",
+    "ComelitError",
     "ComelitSerialBridgeObject",
     "ComelitVedoApi",
     "ComelitVedoAreaObject",
     "ComelitVedoZoneObject",
-    "ComelitError",
-    "CannotConnect",
-    "CannotAuthenticate",
-    "CannotRetrieveData",
+    "ComeliteSerialBridgeApi",
 ]
