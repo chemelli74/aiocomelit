@@ -565,7 +565,7 @@ class ComelitVedoApi(ComelitCommonApi):
                 present,
             )
             if not reply_status:
-                _LOGGER.info("Login expired accessing %s, re-login attempt", desc)
+                _LOGGER.debug("Login expired accessing %s, re-login attempt", desc)
                 await self.login()
                 await self._sleep_between_call(SLEEP_BETWEEN_VEDO_CALLS)
                 reply_status, reply_json = await self._async_get_page_data(
@@ -577,7 +577,7 @@ class ComelitVedoApi(ComelitCommonApi):
                     raise CannotRetrieveData(
                         "Login expired and not working after a retry",
                     )
-                _LOGGER.info("Re-login successful")
+                _LOGGER.debug("Re-login successful")
             self._json_data.insert(index, reply_json)
 
         list_areas: list[int] = self._json_data[1]["present"]
