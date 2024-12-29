@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.10.1 (2024-12-29)
+
+### Bug fixes
+
+- Logging level (#215) ([`e15b2d4`](https://github.com/chemelli74/aiocomelit/commit/e15b2d4550c08e2f0e752acc451077b8db99716c))
+
+
+### Unknown
+
+### Testing
+
+- Cleanup .coveragerc (again) (#190) ([`15328cd`](https://github.com/chemelli74/aiocomelit/commit/15328cdc4913912a59345bca59576def0f4bab22))
+
+
 ## v0.10.0 (2024-11-01)
 
 ### Build system
@@ -273,4 +287,3 @@
 ### Bug fixes
 
 - Commlint ([`1b1e836`](https://github.com/chemelli74/aiocomelit/commit/1b1e836b9b6f6f21999e2499af1d15c995e4cd7d))
-
