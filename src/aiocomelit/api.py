@@ -272,7 +272,7 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
                 await self._sleep_between_call(delta_seconds)
 
         reply_status, reply_json = await self._get_page_result(
-            f"/user/action.cgi?clima={index}&{mode}={action}&val={int(value*10)}",
+            f"/user/action.cgi?clima={index}&{mode}={action}&val={int(value * 10)}",
             False,
         )
         self._last_clima_command = datetime.now(tz=UTC)
