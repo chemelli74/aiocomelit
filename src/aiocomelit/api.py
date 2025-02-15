@@ -518,11 +518,13 @@ class ComelitVedoApi(ComelitCommonApi):
     async def get_area_status(
         self,
         area: ComelitVedoAreaObject,
+        vedo_direct_ip: bool = True,
     ) -> ComelitVedoAreaObject:
         """Get AREA status."""
+        vedo = "" if vedo_direct_ip else "vedo_"
         reply_status, reply_json_area_stat = await self._async_get_page_data(
             "AREA statistics",
-            "/user/area_stat.json",
+            f"/user/{vedo}area_stat.json",
         )
         description = {"description": area.name, "p1_pres": area.p1, "p2_pres": area.p2}
 
