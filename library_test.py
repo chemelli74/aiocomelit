@@ -29,7 +29,7 @@ from aiocomelit.const import (
     STATE_ON,
     VEDO,
 )
-from aiocomelit.exceptions import CannotAuthenticate, CannotConnect
+from aiocomelit.exceptions import CannotAuthenticate, CannotConnect, CannotRetrieveData
 
 INDEX = 0
 
@@ -185,8 +185,8 @@ async def vedo_test(
     comelit_session: ClientSession | None = None,
 ) -> None:
     """Test code for Comelit VEDO system."""
-    vedo_api = ComelitVedoApi(args.vedo, args.vedo_port, args.vedo_pin)
     if vedo_direct_ip:
+        vedo_api = ComelitVedoApi(args.vedo, args.vedo_port, args.vedo_pin)
         logged = False
         try:
             logged = await vedo_api.login()
@@ -199,10 +199,17 @@ async def vedo_test(
                 sys.exit(1)
         print("Logged:", logged)
     else:
+        vedo_api = ComelitVedoApi(args.bridge, args.bridge_port, "")
         await vedo_api.set_session(comelit_session)
         print("Logged: via BRIDGE")
     print("-" * 20)
-    alarm_data = await vedo_api.get_all_areas_and_zones(vedo_direct_ip)
+    try:
+        alarm_data = await vedo_api.get_all_areas_and_zones(vedo_direct_ip)
+    except (CannotAuthenticate, CannotRetrieveData):
+        print(f"Unable to retrieve data for {VEDO} [{vedo_api.host}]")
+        await vedo_api.logout()
+        await vedo_api.close()
+        sys.exit(2)
     print("AREAS:")
     for area in alarm_data[ALARM_AREAS]:
         print(alarm_data[ALARM_AREAS][area])
