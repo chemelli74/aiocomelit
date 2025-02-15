@@ -199,7 +199,7 @@ async def vedo_test(
                 sys.exit(1)
         print("Logged:", logged)
     else:
-        vedo_api = ComelitVedoApi(args.bridge, args.bridge_port, "")
+        vedo_api = ComelitVedoApi(args.bridge, args.bridge_port, args.vedo_pin)
         await vedo_api.set_session(comelit_session)
         print("Logged: via BRIDGE")
     print("-" * 20)
