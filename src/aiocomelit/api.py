@@ -187,6 +187,10 @@ class ComelitCommonApi:
     async def login(self) -> bool:
         """Login to Comelit device."""
 
+    async def get_session(self) -> aiohttp.ClientSession:
+        """Return active session."""
+        return self._session
+
     async def _login(self, payload: dict[str, Any], host_type: str) -> bool:
         """Login into Comelit device."""
         _LOGGER.debug("Logging into host %s [%s]", self.host, host_type)
@@ -502,6 +506,10 @@ class ComelitVedoApi(ComelitCommonApi):
         )
         return reply_status == HTTPStatus.OK
 
+    async def set_session(self, session: aiohttp.ClientSession) -> None:
+        """Set active session."""
+        self._session = session
+
     async def login(self) -> bool:
         """Login to VEDO system."""
         payload = {"code": self.device_pin}
@@ -526,27 +534,29 @@ class ComelitVedoApi(ComelitCommonApi):
 
     async def get_all_areas_and_zones(
         self,
+        vedo_direct_ip: bool = True,
     ) -> dict[str, dict[int, Any]]:
         """Get all VEDO system AREA and ZONE."""
+        vedo = "" if vedo_direct_ip else "vedo_"
         queries: dict[int, dict[str, Any]] = {
             1: {
                 "desc": "AREA description",
-                "page": "/user/area_desc.json",
+                "page": f"/user/{vedo}area_desc.json",
                 "present": 1,
             },
             2: {
                 "desc": "ZONE description",
-                "page": "/user/zone_desc.json",
+                "page": f"/user/{vedo}zone_desc.json",
                 "present": "1",
             },
             3: {
                 "desc": "AREA statistics",
-                "page": "/user/area_stat.json",
+                "page": f"/user/{vedo}area_stat.json",
                 "present": None,
             },
             4: {
                 "desc": "ZONE statistics",
-                "page": "/user/zone_stat.json",
+                "page": f"/user/{vedo}zone_stat.json",
                 "present": None,
             },
         }

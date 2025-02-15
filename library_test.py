@@ -7,6 +7,7 @@ import sys
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
+from aiohttp import ClientSession
 from colorlog import ColoredFormatter
 
 from aiocomelit import __version__
@@ -79,6 +80,13 @@ def get_arguments() -> tuple[ArgumentParser, Namespace]:
         help="Set VEDO system pin",
     )
     parser.add_argument(
+        "--vedo_network",
+        "-vn",
+        type=set,
+        default="True",
+        help="VEDO network direct access",
+    )
+    parser.add_argument(
         "--test",
         "-t",
         action="store_true",
@@ -122,7 +130,10 @@ async def execute_alarm_test(api: ComelitVedoApi, area: ComelitVedoAreaObject) -
     print("Status after: ", await api.get_area_status(area))
 
 
-async def bridge_test(args: Namespace) -> None:
+async def bridge_test(
+    args: Namespace,
+    vedo_direct_ip: bool = True,
+) -> ClientSession | None:
     """Test code for Comelit Serial Bridge."""
     bridge_api = ComeliteSerialBridgeApi(args.bridge, args.bridge_port, args.bridge_pin)
     logged = False
@@ -158,27 +169,40 @@ async def bridge_test(args: Namespace) -> None:
                 await execute_device_test(bridge_api, device, OTHER)
                 break
         print("-" * 20)
+    if not vedo_direct_ip:
+        return await bridge_api.get_session()
+
     print("Logout & close session")
     await bridge_api.logout()
     await bridge_api.close()
 
+    return None
 
-async def vedo_test(args: Namespace) -> None:
+
+async def vedo_test(
+    args: Namespace,
+    vedo_direct_ip: bool = True,
+    comelit_session: ClientSession | None = None,
+) -> None:
     """Test code for Comelit VEDO system."""
     vedo_api = ComelitVedoApi(args.vedo, args.vedo_port, args.vedo_pin)
-    logged = False
-    try:
-        logged = await vedo_api.login()
-    except (CannotConnect, CannotAuthenticate):
-        pass
-    finally:
-        if not logged:
-            print(f"Unable to login to {VEDO} [{vedo_api.host}]")
-            await vedo_api.close()
-            sys.exit(1)
-    print("Logged:", logged)
+    if vedo_direct_ip:
+        logged = False
+        try:
+            logged = await vedo_api.login()
+        except (CannotConnect, CannotAuthenticate):
+            pass
+        finally:
+            if not logged:
+                print(f"Unable to login to {VEDO} [{vedo_api.host}]")
+                await vedo_api.close()
+                sys.exit(1)
+        print("Logged:", logged)
+    else:
+        await vedo_api.set_session(comelit_session)
+        print("Logged: via BRIDGE")
     print("-" * 20)
-    alarm_data = await vedo_api.get_all_areas_and_zones()
+    alarm_data = await vedo_api.get_all_areas_and_zones(vedo_direct_ip)
     print("AREAS:")
     for area in alarm_data[ALARM_AREAS]:
         print(alarm_data[ALARM_AREAS][area])
@@ -199,17 +223,20 @@ async def main() -> None:
     """Run main."""
     parser, args = get_arguments()
 
+    # VEDO system can be accessed via direct IP or via BRIDGE
+    vedo_direct_ip = bool(args.vedo_network in ["True", "true", "1", 1])
+
     print("-" * 20)
     print(f"aiocomelit version: {__version__}")
     print("-" * 20)
-    await bridge_test(args)
+    comelit_session = await bridge_test(args, vedo_direct_ip)
 
-    # VEDO system mandatorily requires a pin
-    if not args.vedo_pin:
+    # VEDO system mandatorily requires a pin for direct access
+    if vedo_direct_ip and not args.vedo_pin:
         print("Comelit VEDO System: missing PIN. Skipping tests")
         parser.print_help()
         return
-    await vedo_test(args)
+    await vedo_test(args, vedo_direct_ip, comelit_session)
 
 
 def set_logging() -> None:
