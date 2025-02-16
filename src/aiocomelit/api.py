@@ -87,6 +87,9 @@ class ComelitVedoZoneObject:
 class ComelitCommonApi:
     """Common API calls for Comelit SimpleHome devices."""
 
+    _vedo_url_suffix: str = ""
+    _vedo_url_action: str = ""
+
     def __init__(self, host: str, port: int, pin: int) -> None:
         """Initialize the session."""
         self.host = f"{host}:{port}"
@@ -103,8 +106,6 @@ class ComelitCommonApi:
         }
         self._session: aiohttp.ClientSession
         self._json_data: list[dict[Any, Any]] = [{}, {}, {}, {}, {}]
-        self._vedo_url_suffix: str = ""
-        self._vedo_url_action: str = ""
 
     async def _get_page_result(
         self,
@@ -603,11 +604,13 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
 
         return self._devices
 
-    async def vedo_enabled(self) -> bool:
+    async def vedo_enabled(self, vedo_pin: int) -> bool:
         """Check if Serial bridge has VEDO alarm feature."""
+        payload = {"alm": vedo_pin}
         try:
+            await self._login(payload, VEDO)
             await self._get_page_result(f"/user/{self._vedo_url_suffix}area_desc.json")
-        except CannotRetrieveData:
+        except (CannotAuthenticate, CannotRetrieveData):
             return False
 
         return True

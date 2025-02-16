@@ -162,7 +162,7 @@ async def bridge_test(args: Namespace) -> bool:
                 break
         print("-" * 20)
 
-    vedo_enabled = await bridge_api.vedo_enabled()
+    vedo_enabled = await bridge_api.vedo_enabled(args.vedo_pin or args.bridge_pin)
 
     if vedo_enabled:
         print("Serial Bridge: VEDO Enabled !")
