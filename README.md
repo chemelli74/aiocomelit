@@ -35,6 +35,27 @@ Install this via pip (or your favourite package manager):
 
 `pip install aiocomelit`
 
+## Test
+
+Test the library with:
+
+`python library_test.py`
+
+The script accept command line arguments or a library_test.json config file:
+
+```json
+{
+  "bridge": "192.168.1.252",
+  "bridge_port": 80,
+  "bridge_pin": 12345,
+  "bridge_vedo": false,
+  "vedo": "192.168.1.230",
+  "vedo_port": 8080,
+  "vedo_pin": 67890,
+  "test": false
+}
+```
+
 ## Contributors ✨
 
 Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
