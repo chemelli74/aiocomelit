@@ -81,8 +81,8 @@ def get_arguments() -> tuple[ArgumentParser, Namespace]:
     parser.add_argument(
         "--test",
         "-t",
-        type=str,
-        default="True",
+        action="store_true",
+        default=False,
         help="Execute test actions",
     )
     parser.add_argument(
@@ -140,7 +140,7 @@ async def bridge_test(args: Namespace) -> None:
     devices = await bridge_api.get_all_devices()
     print("Devices:", devices)
     print("-" * 20)
-    if args.test == "True":
+    if args.test:
         for device in devices[LIGHT].values():
             if device.index == INDEX:
                 await execute_device_test(bridge_api, device, LIGHT)
@@ -187,7 +187,7 @@ async def vedo_test(args: Namespace) -> None:
     for zone in alarm_data[ALARM_ZONES]:
         print(alarm_data[ALARM_ZONES][zone])
     print("-" * 20)
-    if args.test == "True":
+    if args.test:
         await execute_alarm_test(vedo_api, alarm_data[ALARM_AREAS][INDEX])
         print("-" * 20)
     print("Logout & close session")
