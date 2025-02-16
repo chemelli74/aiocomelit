@@ -48,6 +48,7 @@ The script accept command line arguments or a library_test.json config file:
   "bridge": "192.168.1.252",
   "bridge_port": 80,
   "bridge_pin": 12345,
+  "bridge_vedo": false,
   "vedo": "192.168.1.230",
   "vedo_port": 8080,
   "vedo_pin": 67890,

@@ -59,6 +59,13 @@ def get_arguments() -> tuple[ArgumentParser, Namespace]:
         help="Set Serial bridge pin",
     )
     parser.add_argument(
+        "--bridge_vedo",
+        "-bv",
+        action="store_true",
+        default=False,
+        help="Use Serial bridge to access VEDO",
+    )
+    parser.add_argument(
         "--vedo",
         "-v",
         type=str,
@@ -162,7 +169,10 @@ async def bridge_test(args: Namespace) -> bool:
                 break
         print("-" * 20)
 
-    vedo_enabled = await bridge_api.vedo_enabled(args.vedo_pin or args.bridge_pin)
+    vedo_enabled: bool = (
+        await bridge_api.vedo_enabled(args.vedo_pin or args.bridge_pin)
+        and args.bridge_vedo
+    )
 
     if vedo_enabled:
         print("Serial Bridge: VEDO Enabled !")
