@@ -7,7 +7,6 @@ import sys
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
-from aiohttp import ClientSession
 from colorlog import ColoredFormatter
 
 from aiocomelit import __version__
@@ -133,7 +132,7 @@ async def execute_alarm_test(
     print("Status after: ", await api.get_area_status(area))
 
 
-async def bridge_test(args: Namespace) -> ClientSession | None:
+async def bridge_test(args: Namespace) -> None:
     """Test code for Comelit Serial Bridge."""
     bridge_api = ComeliteSerialBridgeApi(args.bridge, args.bridge_port, args.bridge_pin)
     logged = False
@@ -176,8 +175,6 @@ async def bridge_test(args: Namespace) -> ClientSession | None:
     print("Logout & close session")
     await bridge_api.logout()
     await bridge_api.close()
-
-    return None
 
 
 async def vedo_test(
