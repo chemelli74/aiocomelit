@@ -59,13 +59,6 @@ def get_arguments() -> tuple[ArgumentParser, Namespace]:
         help="Set Serial bridge pin",
     )
     parser.add_argument(
-        "--bridge_vedo",
-        "-bv",
-        action="store_true",
-        default=False,
-        help="Use Serial bridge to access VEDO",
-    )
-    parser.add_argument(
         "--vedo",
         "-v",
         type=str,
@@ -132,7 +125,7 @@ async def execute_alarm_test(
     print("Status after: ", await api.get_area_status(area))
 
 
-async def bridge_test(args: Namespace) -> None:
+async def bridge_test(args: Namespace) -> bool:
     """Test code for Comelit Serial Bridge."""
     bridge_api = ComeliteSerialBridgeApi(args.bridge, args.bridge_port, args.bridge_pin)
     logged = False
@@ -169,12 +162,17 @@ async def bridge_test(args: Namespace) -> None:
                 break
         print("-" * 20)
 
-    if args.bridge_vedo:
+    vedo_enabled = await bridge_api.vedo_enabled()
+
+    if vedo_enabled:
+        print("Serial Bridge: VEDO Enabled !")
         await vedo_test(args, bridge_api)
 
     print("Logout & close session")
     await bridge_api.logout()
     await bridge_api.close()
+
+    return vedo_enabled
 
 
 async def vedo_test(
@@ -231,10 +229,14 @@ async def main() -> None:
     print("-" * 20)
     print(f"aiocomelit version: {__version__}")
     print("-" * 20)
-    await bridge_test(args)
+    vedo_enabled = await bridge_test(args)
+
+    # VEDO is accessible via Serial bridge, no direct access
+    if vedo_enabled:
+        return
 
     # VEDO system mandatorily requires a pin for direct access
-    if not args.bridge_vedo and not args.vedo_pin:
+    if not args.vedo_pin:
         print("Comelit VEDO System: missing PIN. Skipping tests")
         parser.print_help()
         return

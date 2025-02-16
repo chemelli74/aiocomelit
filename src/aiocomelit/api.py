@@ -87,8 +87,6 @@ class ComelitVedoZoneObject:
 class ComelitCommonApi:
     """Common API calls for Comelit SimpleHome devices."""
 
-    _vedo: str = ""
-
     def __init__(self, host: str, port: int, pin: int) -> None:
         """Initialize the session."""
         self.host = f"{host}:{port}"
@@ -105,6 +103,8 @@ class ComelitCommonApi:
         }
         self._session: aiohttp.ClientSession
         self._json_data: list[dict[Any, Any]] = [{}, {}, {}, {}, {}]
+        self._vedo_url_suffix: str = ""
+        self._vedo_url_action: str = ""
 
     async def _get_page_result(
         self,
@@ -332,7 +332,7 @@ class ComelitCommonApi:
 
         """
         reply_status, reply_json = await self._get_page_result(
-            f"/action.cgi?vedo=1&{action}={index}&force={int(force)}",
+            f"{self._vedo_url_action}{action}={index}&force={int(force)}",
             False,
         )
         return reply_status == HTTPStatus.OK
@@ -344,7 +344,7 @@ class ComelitCommonApi:
         """Get AREA status."""
         reply_status, reply_json_area_stat = await self._async_get_page_data(
             "AREA statistics",
-            f"/user/{self._vedo}area_stat.json",
+            f"/user/{self._vedo_url_suffix}area_stat.json",
         )
         description = {"description": area.name, "p1_pres": area.p1, "p2_pres": area.p2}
 
@@ -361,22 +361,22 @@ class ComelitCommonApi:
         queries: dict[int, dict[str, Any]] = {
             1: {
                 "desc": "AREA description",
-                "page": f"/user/{self._vedo}area_desc.json",
+                "page": f"/user/{self._vedo_url_suffix}area_desc.json",
                 "present": 1,
             },
             2: {
                 "desc": "ZONE description",
-                "page": f"/user/{self._vedo}zone_desc.json",
+                "page": f"/user/{self._vedo_url_suffix}zone_desc.json",
                 "present": "1",
             },
             3: {
                 "desc": "AREA statistics",
-                "page": f"/user/{self._vedo}area_stat.json",
+                "page": f"/user/{self._vedo_url_suffix}area_stat.json",
                 "present": None,
             },
             4: {
                 "desc": "ZONE statistics",
-                "page": f"/user/{self._vedo}zone_stat.json",
+                "page": f"/user/{self._vedo_url_suffix}zone_stat.json",
                 "present": None,
             },
         }
@@ -442,7 +442,8 @@ class ComelitCommonApi:
 class ComeliteSerialBridgeApi(ComelitCommonApi):
     """Queries Comelit SimpleHome Serial bridge."""
 
-    _vedo: str = "vedo_"
+    _vedo_url_suffix: str = "vedo_"
+    _vedo_url_action: str = "/user/action.cgi?"
 
     def __init__(self, host: str, port: int, bridge_pin: int) -> None:
         """Initialize the session."""
@@ -602,11 +603,21 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
 
         return self._devices
 
+    async def vedo_enabled(self) -> bool:
+        """Check if Serial bridge has VEDO alarm feature."""
+        try:
+            await self._get_page_result(f"/user/{self._vedo_url_suffix}area_desc.json")
+        except CannotRetrieveData:
+            return False
+
+        return True
+
 
 class ComelitVedoApi(ComelitCommonApi):
     """Queries Comelit SimpleHome VEDO alarm."""
 
-    _vedo: str = ""
+    _vedo_url_suffix: str = ""
+    _vedo_url_action: str = "/action.cgi?vedo=1&"
 
     async def login(self) -> bool:
         """Login to VEDO system."""
