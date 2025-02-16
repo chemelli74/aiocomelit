@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from http import HTTPStatus
 from http.cookies import SimpleCookie
-from typing import Any, ClassVar, cast
+from typing import Any, cast
 
 import aiohttp
 import pint
@@ -87,7 +87,6 @@ class ComelitVedoZoneObject:
 class ComelitCommonApi:
     """Common API calls for Comelit SimpleHome devices."""
 
-    _json_data: ClassVar[list[dict[Any, Any]]] = [{}, {}, {}, {}, {}]
     _vedo: str = ""
 
     def __init__(self, host: str, port: int, pin: int) -> None:
@@ -105,6 +104,7 @@ class ComelitCommonApi:
             "Connection": "keep-alive",
         }
         self._session: aiohttp.ClientSession
+        self._json_data: list[dict[Any, Any]] = [{}, {}, {}, {}, {}]
 
     async def _get_page_result(
         self,
