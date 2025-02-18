@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from http import HTTPStatus
 from http.cookies import SimpleCookie
-from typing import Any, ClassVar, cast
+from typing import Any, cast
 
 import aiohttp
 import pint
@@ -87,6 +87,9 @@ class ComelitVedoZoneObject:
 class ComelitCommonApi:
     """Common API calls for Comelit SimpleHome devices."""
 
+    _vedo_url_suffix: str = ""
+    _vedo_url_action: str = ""
+
     def __init__(self, host: str, port: int, pin: int) -> None:
         """Initialize the session."""
         self.host = f"{host}:{port}"
@@ -102,6 +105,7 @@ class ComelitCommonApi:
             "Connection": "keep-alive",
         }
         self._session: aiohttp.ClientSession
+        self._json_data: list[dict[Any, Any]] = [{}, {}, {}, {}, {}]
 
     async def _get_page_result(
         self,
@@ -227,9 +231,220 @@ class ComelitCommonApi:
         if await self._is_session_active():
             await self._session.close()
 
+    async def _translate_zone_status(
+        self,
+        zone: ComelitVedoZoneObject,
+    ) -> AlarmZoneState:
+        """Translate ZONE status."""
+        for status in ALARM_ZONE_STATUS:
+            if zone.status & status != 0:
+                return ALARM_ZONE_STATUS[status]
+
+        return AlarmZoneState.REST
+
+    async def _translate_area_status(
+        self,
+        area: ComelitVedoAreaObject,
+    ) -> AlarmAreaState:
+        """Translate AREA status."""
+        for field in ALARM_AREA_STATUS:
+            if getattr(area, field):
+                return ALARM_AREA_STATUS[field]
+
+        return AlarmAreaState.DISARMED
+
+    async def _create_area_object(
+        self,
+        json_area_desc: dict[str, Any],
+        json_area_stat: dict[str, Any],
+        index: int,
+    ) -> ComelitVedoAreaObject:
+        """Get area status."""
+        area = ComelitVedoAreaObject(
+            index=index,
+            name=json_area_desc["description"][index],
+            p1=json_area_desc["p1_pres"][index],
+            p2=json_area_desc["p2_pres"][index],
+            ready=json_area_stat["ready"][index],
+            armed=json_area_stat["armed"][index],
+            alarm=json_area_stat["alarm"][index],
+            alarm_memory=json_area_stat["alarm_memory"][index],
+            sabotage=json_area_stat["sabotage"][index],
+            anomaly=json_area_stat["anomaly"][index],
+            in_time=json_area_stat["in_time"][index],
+            out_time=json_area_stat["out_time"][index],
+            human_status=AlarmAreaState.UNKNOWN,
+        )
+        area.human_status = await self._translate_area_status(area)
+        _LOGGER.debug(area)
+        return area
+
+    async def _create_zone_object(
+        self,
+        json_zone_desc: dict[str, Any],
+        json_zone_stat: dict[str, Any],
+        index: int,
+    ) -> ComelitVedoZoneObject:
+        """Create zone object."""
+        status_api = json_zone_stat["status"].split(",")[index]
+
+        zone = ComelitVedoZoneObject(
+            index=index,
+            name=json_zone_desc["description"][index],
+            status=int(status_api, 16),
+            status_api=status_api,
+            human_status=AlarmZoneState.UNKNOWN,
+        )
+        zone.human_status = await self._translate_zone_status(zone)
+        _LOGGER.debug(zone)
+        return zone
+
+    async def _async_get_page_data(
+        self,
+        desc: str,
+        page: str,
+        present_check: str | int | None = None,
+    ) -> tuple[bool, dict[str, Any]]:
+        """Return status and data from a specific GET query."""
+        reply_status, reply_json = await self._get_page_result(page)
+        _LOGGER.debug("Alarm %s: %s", desc, reply_json)
+        present = present_check in reply_json["present"] if "_desc" in page else True
+        return (reply_json["logged"] and present), reply_json
+
+    async def set_zone_status(
+        self,
+        index: int,
+        action: str,
+        force: bool = False,
+    ) -> bool:
+        """Set zone action.
+
+        action:
+            tot = enable
+            dis = disable
+
+        index:
+            32 = all zones
+             n = specific zone
+
+        force:
+            False = don't force action
+            True  = force action
+
+        """
+        reply_status, reply_json = await self._get_page_result(
+            f"{self._vedo_url_action}{action}={index}&force={int(force)}",
+            False,
+        )
+        return reply_status == HTTPStatus.OK
+
+    async def get_area_status(
+        self,
+        area: ComelitVedoAreaObject,
+    ) -> ComelitVedoAreaObject:
+        """Get AREA status."""
+        reply_status, reply_json_area_stat = await self._async_get_page_data(
+            "AREA statistics",
+            f"/user/{self._vedo_url_suffix}area_stat.json",
+        )
+        description = {"description": area.name, "p1_pres": area.p1, "p2_pres": area.p2}
+
+        return await self._create_area_object(
+            description,
+            reply_json_area_stat,
+            area.index,
+        )
+
+    async def get_all_areas_and_zones(
+        self,
+    ) -> dict[str, dict[int, Any]]:
+        """Get all VEDO system AREA and ZONE."""
+        queries: dict[int, dict[str, Any]] = {
+            1: {
+                "desc": "AREA description",
+                "page": f"/user/{self._vedo_url_suffix}area_desc.json",
+                "present": 1,
+            },
+            2: {
+                "desc": "ZONE description",
+                "page": f"/user/{self._vedo_url_suffix}zone_desc.json",
+                "present": "1",
+            },
+            3: {
+                "desc": "AREA statistics",
+                "page": f"/user/{self._vedo_url_suffix}area_stat.json",
+                "present": None,
+            },
+            4: {
+                "desc": "ZONE statistics",
+                "page": f"/user/{self._vedo_url_suffix}zone_stat.json",
+                "present": None,
+            },
+        }
+
+        for index, info in queries.items():
+            desc = info["desc"]
+            page = info["page"]
+            present = info["present"]
+            if "_desc" in page and self._json_data[index]:
+                _LOGGER.debug("Data for %s already retrieved, skipping", desc)
+                continue
+            await self._sleep_between_call(SLEEP_BETWEEN_VEDO_CALLS)
+            reply_status, reply_json = await self._async_get_page_data(
+                desc,
+                page,
+                present,
+            )
+            if not reply_status:
+                _LOGGER.debug("Login expired accessing %s, re-login attempt", desc)
+                await self.login()
+                await self._sleep_between_call(SLEEP_BETWEEN_VEDO_CALLS)
+                reply_status, reply_json = await self._async_get_page_data(
+                    desc,
+                    page,
+                    present,
+                )
+                if not reply_status:
+                    raise CannotRetrieveData(
+                        "Login expired and not working after a retry",
+                    )
+                _LOGGER.debug("Re-login successful")
+            self._json_data.insert(index, reply_json)
+
+        list_areas: list[int] = self._json_data[1]["present"]
+        areas = {}
+        for i in range(len(list_areas)):
+            if not list_areas[i]:
+                _LOGGER.debug("Alarm skipping non present AREA [%i]", i)
+                continue
+            area = await self._create_area_object(
+                self._json_data[1],
+                self._json_data[3],
+                i,
+            )
+            areas.update({i: area})
+
+        list_zones: list[int] = self._json_data[2]["present"]
+        zones = {}
+        for i in range(len(list_zones)):
+            if not int(list_zones[i]):
+                _LOGGER.debug("Alarm skipping non present ZONE [%i]", i)
+                continue
+            zone = await self._create_zone_object(
+                self._json_data[2],
+                self._json_data[4],
+                i,
+            )
+            zones.update({i: zone})
+
+        return {ALARM_AREAS: areas, ALARM_ZONES: zones}
+
 
 class ComeliteSerialBridgeApi(ComelitCommonApi):
     """Queries Comelit SimpleHome Serial bridge."""
+
+    _vedo_url_suffix: str = "vedo_"
+    _vedo_url_action: str = "/user/action.cgi?"
 
     def __init__(self, host: str, port: int, bridge_pin: int) -> None:
         """Initialize the session."""
@@ -389,221 +604,25 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
 
         return self._devices
 
+    async def vedo_enabled(self, vedo_pin: int) -> bool:
+        """Check if Serial bridge has VEDO alarm feature."""
+        payload = {"alm": vedo_pin}
+        try:
+            await self._login(payload, VEDO)
+            await self._get_page_result(f"/user/{self._vedo_url_suffix}area_desc.json")
+        except (CannotAuthenticate, CannotRetrieveData):
+            return False
+
+        return True
+
 
 class ComelitVedoApi(ComelitCommonApi):
     """Queries Comelit SimpleHome VEDO alarm."""
 
-    _json_data: ClassVar[list[dict[Any, Any]]] = [{}, {}, {}, {}, {}]
-
-    async def _translate_zone_status(
-        self,
-        zone: ComelitVedoZoneObject,
-    ) -> AlarmZoneState:
-        """Translate ZONE status."""
-        for status in ALARM_ZONE_STATUS:
-            if zone.status & status != 0:
-                return ALARM_ZONE_STATUS[status]
-
-        return AlarmZoneState.REST
-
-    async def _translate_area_status(
-        self,
-        area: ComelitVedoAreaObject,
-    ) -> AlarmAreaState:
-        """Translate AREA status."""
-        for field in ALARM_AREA_STATUS:
-            if getattr(area, field):
-                return ALARM_AREA_STATUS[field]
-
-        return AlarmAreaState.DISARMED
-
-    async def _create_area_object(
-        self,
-        json_area_desc: dict[str, Any],
-        json_area_stat: dict[str, Any],
-        index: int,
-    ) -> ComelitVedoAreaObject:
-        """Get area status."""
-        area = ComelitVedoAreaObject(
-            index=index,
-            name=json_area_desc["description"][index],
-            p1=json_area_desc["p1_pres"][index],
-            p2=json_area_desc["p2_pres"][index],
-            ready=json_area_stat["ready"][index],
-            armed=json_area_stat["armed"][index],
-            alarm=json_area_stat["alarm"][index],
-            alarm_memory=json_area_stat["alarm_memory"][index],
-            sabotage=json_area_stat["sabotage"][index],
-            anomaly=json_area_stat["anomaly"][index],
-            in_time=json_area_stat["in_time"][index],
-            out_time=json_area_stat["out_time"][index],
-            human_status=AlarmAreaState.UNKNOWN,
-        )
-        area.human_status = await self._translate_area_status(area)
-        _LOGGER.debug(area)
-        return area
-
-    async def _create_zone_object(
-        self,
-        json_zone_desc: dict[str, Any],
-        json_zone_stat: dict[str, Any],
-        index: int,
-    ) -> ComelitVedoZoneObject:
-        """Create zone object."""
-        status_api = json_zone_stat["status"].split(",")[index]
-
-        zone = ComelitVedoZoneObject(
-            index=index,
-            name=json_zone_desc["description"][index],
-            status=int(status_api, 16),
-            status_api=status_api,
-            human_status=AlarmZoneState.UNKNOWN,
-        )
-        zone.human_status = await self._translate_zone_status(zone)
-        _LOGGER.debug(zone)
-        return zone
-
-    async def _async_get_page_data(
-        self,
-        desc: str,
-        page: str,
-        present_check: str | int | None = None,
-    ) -> tuple[bool, dict[str, Any]]:
-        """Return status and data from a specific GET query."""
-        reply_status, reply_json = await self._get_page_result(page)
-        _LOGGER.debug("Alarm %s: %s", desc, reply_json)
-        present = present_check in reply_json["present"] if "_desc" in page else True
-        return (reply_json["logged"] and present), reply_json
-
-    async def set_zone_status(
-        self,
-        index: int,
-        action: str,
-        force: bool = False,
-    ) -> bool:
-        """Set zone action.
-
-        action:
-            tot = enable
-            dis = disable
-
-        index:
-            32 = all zones
-             n = specific zone
-
-        force:
-            False = don't force action
-            True  = force action
-
-        """
-        reply_status, reply_json = await self._get_page_result(
-            f"/action.cgi?vedo=1&{action}={index}&force={int(force)}",
-            False,
-        )
-        return reply_status == HTTPStatus.OK
+    _vedo_url_suffix: str = ""
+    _vedo_url_action: str = "/action.cgi?vedo=1&"
 
     async def login(self) -> bool:
         """Login to VEDO system."""
         payload = {"code": self.device_pin}
         return await self._login(payload, VEDO)
-
-    async def get_area_status(
-        self,
-        area: ComelitVedoAreaObject,
-    ) -> ComelitVedoAreaObject:
-        """Get AREA status."""
-        reply_status, reply_json_area_stat = await self._async_get_page_data(
-            "AREA statistics",
-            "/user/area_stat.json",
-        )
-        description = {"description": area.name, "p1_pres": area.p1, "p2_pres": area.p2}
-
-        return await self._create_area_object(
-            description,
-            reply_json_area_stat,
-            area.index,
-        )
-
-    async def get_all_areas_and_zones(
-        self,
-    ) -> dict[str, dict[int, Any]]:
-        """Get all VEDO system AREA and ZONE."""
-        queries: dict[int, dict[str, Any]] = {
-            1: {
-                "desc": "AREA description",
-                "page": "/user/area_desc.json",
-                "present": 1,
-            },
-            2: {
-                "desc": "ZONE description",
-                "page": "/user/zone_desc.json",
-                "present": "1",
-            },
-            3: {
-                "desc": "AREA statistics",
-                "page": "/user/area_stat.json",
-                "present": None,
-            },
-            4: {
-                "desc": "ZONE statistics",
-                "page": "/user/zone_stat.json",
-                "present": None,
-            },
-        }
-
-        for index, info in queries.items():
-            desc = info["desc"]
-            page = info["page"]
-            present = info["present"]
-            if "_desc" in page and self._json_data[index]:
-                _LOGGER.debug("Data for %s already retrieved, skipping", desc)
-                continue
-            await self._sleep_between_call(SLEEP_BETWEEN_VEDO_CALLS)
-            reply_status, reply_json = await self._async_get_page_data(
-                desc,
-                page,
-                present,
-            )
-            if not reply_status:
-                _LOGGER.debug("Login expired accessing %s, re-login attempt", desc)
-                await self.login()
-                await self._sleep_between_call(SLEEP_BETWEEN_VEDO_CALLS)
-                reply_status, reply_json = await self._async_get_page_data(
-                    desc,
-                    page,
-                    present,
-                )
-                if not reply_status:
-                    raise CannotRetrieveData(
-                        "Login expired and not working after a retry",
-                    )
-                _LOGGER.debug("Re-login successful")
-            self._json_data.insert(index, reply_json)
-
-        list_areas: list[int] = self._json_data[1]["present"]
-        areas = {}
-        for i in range(len(list_areas)):
-            if not list_areas[i]:
-                _LOGGER.debug("Alarm skipping non present AREA [%i]", i)
-                continue
-            area = await self._create_area_object(
-                self._json_data[1],
-                self._json_data[3],
-                i,
-            )
-            areas.update({i: area})
-
-        list_zones: list[int] = self._json_data[2]["present"]
-        zones = {}
-        for i in range(len(list_zones)):
-            if not int(list_zones[i]):
-                _LOGGER.debug("Alarm skipping non present ZONE [%i]", i)
-                continue
-            zone = await self._create_zone_object(
-                self._json_data[2],
-                self._json_data[4],
-                i,
-            )
-            zones.update({i: zone})
-
-        return {ALARM_AREAS: areas, ALARM_ZONES: zones}
