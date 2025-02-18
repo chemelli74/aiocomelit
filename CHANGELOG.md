@@ -1,5 +1,28 @@
 # Changelog
 
+## v0.11.0 (2025-02-18)
+
+### Features
+
+- Add vedo connection via bridge (#231) ([`9a72c2a`](https://github.com/chemelli74/aiocomelit/commit/9a72c2a933176dc7f2b883dee829f73425734319))
+
+
+### Build system
+
+- Update ruff rules (#234) ([`47d591f`](https://github.com/chemelli74/aiocomelit/commit/47d591fb02cd9e2458e195a3b1057bc9ee4c726a))
+
+
+### Documentation
+
+- Add library_test info (#233) ([`eb22380`](https://github.com/chemelli74/aiocomelit/commit/eb223805a28356c74a2245b174983a96dee710f2))
+
+
+### Testing
+
+- Use boolean argument (#232) ([`528dc4b`](https://github.com/chemelli74/aiocomelit/commit/528dc4be85d20281c48aea1e896b4c9f10facd70))
+- Fix library_test (#230) ([`e9574fe`](https://github.com/chemelli74/aiocomelit/commit/e9574fe00e552502211522ee4812d2f99c70bc86))
+
+
 ## v0.10.1 (2024-12-29)
 
 ### Bug fixes
