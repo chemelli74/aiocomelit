@@ -6,6 +6,7 @@ import logging
 import sys
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
+from typing import cast
 
 from colorlog import ColoredFormatter
 
@@ -225,7 +226,9 @@ async def vedo_test(
         print(alarm_data[ALARM_ZONES][zone])
     print("-" * 20)
     if args.test:
-        await execute_alarm_test(api, alarm_data[ALARM_AREAS][INDEX])
+        await execute_alarm_test(
+            api, cast(ComelitVedoAreaObject, alarm_data[ALARM_AREAS][INDEX])
+        )
         print("-" * 20)
     print("Logout & close session")
     await api.logout()
