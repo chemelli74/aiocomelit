@@ -3,6 +3,7 @@
 import asyncio
 import functools
 from abc import abstractmethod
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from http import HTTPStatus
@@ -47,7 +48,7 @@ class ComelitSerialBridgeObject:
     status: int
     human_status: str
     type: str
-    val: int | dict[Any, Any]  # Temperature or Humidity (CLIMATE)
+    val: int | list[dict[Any, Any]]  # Temperature or Humidity (CLIMATE)
     protected: int
     zone: str
     power: float
@@ -357,7 +358,7 @@ class ComelitCommonApi:
 
     async def get_all_areas_and_zones(
         self,
-    ) -> dict[str, dict[int, Any]]:
+    ) -> dict[str, Mapping[int, ComelitVedoZoneObject | ComelitVedoAreaObject]]:
         """Get all VEDO system AREA and ZONE."""
         queries: dict[int, dict[str, Any]] = {
             1: {
@@ -412,7 +413,7 @@ class ComelitCommonApi:
             self._json_data.insert(index, reply_json)
 
         list_areas: list[int] = self._json_data[1]["present"]
-        areas = {}
+        areas: dict[int, ComelitVedoAreaObject] = {}
         for i in range(len(list_areas)):
             if not list_areas[i]:
                 _LOGGER.debug("Alarm skipping non present AREA [%i]", i)
@@ -425,7 +426,7 @@ class ComelitCommonApi:
             areas.update({i: area})
 
         list_zones: list[int] = self._json_data[2]["present"]
-        zones = {}
+        zones: dict[int, ComelitVedoZoneObject] = {}
         for i in range(len(list_zones)):
             if not int(list_zones[i]):
                 _LOGGER.debug("Alarm skipping non present ZONE [%i]", i)
