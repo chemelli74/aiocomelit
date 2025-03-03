@@ -3,7 +3,6 @@
 import asyncio
 import functools
 from abc import abstractmethod
-from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from http import HTTPStatus
@@ -17,9 +16,7 @@ from yarl import URL
 from .const import (
     _LOGGER,
     ALARM_AREA_STATUS,
-    ALARM_AREAS,
     ALARM_ZONE_STATUS,
-    ALARM_ZONES,
     BRIDGE,
     CLIMATE,
     COVER,
@@ -34,6 +31,7 @@ from .const import (
     VEDO,
     WATT,
     AlarmAreaState,
+    AlarmDataObject,
     AlarmZoneState,
 )
 from .exceptions import CannotAuthenticate, CannotConnect, CannotRetrieveData
@@ -358,7 +356,7 @@ class ComelitCommonApi:
 
     async def get_all_areas_and_zones(
         self,
-    ) -> dict[str, Mapping[int, ComelitVedoZoneObject | ComelitVedoAreaObject]]:
+    ) -> AlarmDataObject:
         """Get all VEDO system AREA and ZONE."""
         queries: dict[int, dict[str, Any]] = {
             1: {
@@ -438,7 +436,7 @@ class ComelitCommonApi:
             )
             zones.update({i: zone})
 
-        return {ALARM_AREAS: areas, ALARM_ZONES: zones}
+        return AlarmDataObject(alarm_areas=areas, alarm_zones=zones)
 
 
 class ComeliteSerialBridgeApi(ComelitCommonApi):

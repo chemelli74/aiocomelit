@@ -2,6 +2,9 @@
 
 import logging
 from enum import Enum
+from typing import TypedDict
+
+from .api import ComelitVedoAreaObject, ComelitVedoZoneObject
 
 _LOGGER = logging.getLogger(__package__)
 
@@ -51,6 +54,13 @@ class AlarmZoneState(Enum):
     SABOTATED = "sabotated"
     UNAVAILABLE = "unavailable"
     UNKNOWN = "unknown"
+
+
+class AlarmDataObject(TypedDict):
+    """TypedDict for Alarm data objects."""
+
+    alarm_areas: dict[int, ComelitVedoAreaObject]
+    alarm_zones: dict[int, ComelitVedoZoneObject]
 
 
 ALARM_DISABLE = "dis"
