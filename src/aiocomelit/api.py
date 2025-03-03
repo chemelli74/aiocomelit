@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from http import HTTPStatus
 from http.cookies import SimpleCookie
-from typing import Any, cast
+from typing import Any, TypedDict, cast
 
 import aiohttp
 import pint
@@ -31,7 +31,6 @@ from .const import (
     VEDO,
     WATT,
     AlarmAreaState,
-    AlarmDataObject,
     AlarmZoneState,
 )
 from .exceptions import CannotAuthenticate, CannotConnect, CannotRetrieveData
@@ -81,6 +80,13 @@ class ComelitVedoZoneObject:
     status_api: str
     status: int
     human_status: AlarmZoneState
+
+
+class AlarmDataObject(TypedDict):
+    """TypedDict for Alarm data objects."""
+
+    alarm_areas: dict[int, ComelitVedoAreaObject]
+    alarm_zones: dict[int, ComelitVedoZoneObject]
 
 
 class ComelitCommonApi:

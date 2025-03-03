@@ -6,7 +6,6 @@ import logging
 import sys
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
-from typing import cast
 
 from colorlog import ColoredFormatter
 
@@ -19,9 +18,7 @@ from aiocomelit.api import (
     ComelitVedoAreaObject,
 )
 from aiocomelit.const import (
-    ALARM_AREAS,
     ALARM_ENABLE,
-    ALARM_ZONES,
     BRIDGE,
     COVER,
     IRRIGATION,
@@ -218,17 +215,15 @@ async def vedo_test(
         await api.close()
         sys.exit(2)
     print("AREAS:")
-    for area in alarm_data[ALARM_AREAS]:
-        print(alarm_data[ALARM_AREAS][area])
+    for area in alarm_data["alarm_areas"]:
+        print(alarm_data["alarm_areas"][area])
     print("-" * 20)
     print("ZONES:")
-    for zone in alarm_data[ALARM_ZONES]:
-        print(alarm_data[ALARM_ZONES][zone])
+    for zone in alarm_data["alarm_zones"]:
+        print(alarm_data["alarm_zones"][zone])
     print("-" * 20)
     if args.test:
-        await execute_alarm_test(
-            api, cast(ComelitVedoAreaObject, alarm_data[ALARM_AREAS][INDEX])
-        )
+        await execute_alarm_test(api, alarm_data["alarm_areas"][INDEX])
         print("-" * 20)
     print("Logout & close session")
     await api.logout()
