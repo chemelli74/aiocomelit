@@ -55,7 +55,6 @@ class AlarmZoneState(Enum):
 
 ALARM_DISABLE = "dis"
 ALARM_ENABLE = "tot"
-ALARM_AREAS = "alarm_areas"
 ALARM_AREA_STATUS: dict[str, AlarmAreaState] = {
     "out_time": AlarmAreaState.EXIT_DELAY,
     "in_time": AlarmAreaState.ENTRY_DELAY,
@@ -65,7 +64,6 @@ ALARM_AREA_STATUS: dict[str, AlarmAreaState] = {
     "armed": AlarmAreaState.ARMED,
     "ready": AlarmAreaState.DISARMED,
 }
-ALARM_ZONES = "alarm_zones"
 ALARM_ZONE_STATUS: dict[int, AlarmZoneState] = {
     # Alarm state needs to be checked first
     # because is reported as OPEN + ALARM + ARMED [51]
