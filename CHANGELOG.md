@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.11.2 (2025-03-03)
+
+### Bug fixes
+
+- Get_all_areas_and_zones return type (#242) ([`3a1e112`](https://github.com/chemelli74/aiocomelit/commit/3a1e1128d4110a7430147cfa3129f59d0f90014d))
+
+
 ## v0.11.1 (2025-03-01)
 
 ### Bug fixes
