@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.11.1 (2025-03-01)
+
+### Bug fixes
+
+- Improve typing (#239) ([`b479203`](https://github.com/chemelli74/aiocomelit/commit/b4792033b170a071a8b588a1293bc0d649387a5c))
+
+
 ## v0.11.0 (2025-02-18)
 
 ### Features
