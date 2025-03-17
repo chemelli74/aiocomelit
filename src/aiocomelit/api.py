@@ -168,7 +168,7 @@ class ComelitCommonApi:
         if response.status != HTTPStatus.OK:
             raise CannotRetrieveData(f"POST response status {response.status}")
 
-        return cast(SimpleCookie, response.cookies)
+        return cast("SimpleCookie", response.cookies)
 
     async def _is_session_active(self) -> bool:
         """Check if aiohttp session is still active."""
@@ -542,7 +542,7 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
             index,
             reply_json["status"][index],
         )
-        return cast(int, reply_json["status"][index])
+        return cast("int", reply_json["status"][index])
 
     async def login(self) -> bool:
         """Login to Serial Bridge device."""
