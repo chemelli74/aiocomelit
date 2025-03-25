@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.11.3 (2025-03-25)
+
+### Bug fixes
+
+- Typing for armed  (comelitvedoareaobject) (#249) ([`e0935d2`](https://github.com/chemelli74/aiocomelit/commit/e0935d203278f22357ea29ff115bbc6a2cda09cc))
+
+
 ## v0.11.2 (2025-03-03)
 
 ### Bug fixes
