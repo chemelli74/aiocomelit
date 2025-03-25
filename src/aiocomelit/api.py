@@ -61,7 +61,7 @@ class ComelitVedoAreaObject:
     p1: bool
     p2: bool
     ready: bool
-    armed: bool
+    armed: int
     alarm: bool
     alarm_memory: bool
     sabotage: bool
