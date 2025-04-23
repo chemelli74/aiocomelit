@@ -1,5 +1,6 @@
 target-version = "py312"
 
+lint.logger-objects = ["aiocomelit.const._LOGGER"]
 lint.select = ["ALL"]
 
 lint.ignore = [
