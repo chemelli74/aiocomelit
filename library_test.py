@@ -7,6 +7,7 @@ import sys
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
+from aiohttp import ClientSession, CookieJar, TCPConnector
 from colorlog import ColoredFormatter
 
 from aiocomelit import __version__
@@ -130,9 +131,11 @@ async def execute_alarm_test(
     print("Status after: ", await api.get_area_status(area))
 
 
-async def bridge_test(args: Namespace) -> bool:
+async def bridge_test(session: ClientSession, args: Namespace) -> bool:
     """Test code for Comelit Serial Bridge."""
-    bridge_api = ComeliteSerialBridgeApi(args.bridge, args.bridge_port, args.bridge_pin)
+    bridge_api = ComeliteSerialBridgeApi(
+        args.bridge, args.bridge_port, args.bridge_pin, session
+    )
     logged = False
     try:
         logged = await bridge_api.login()
@@ -143,7 +146,7 @@ async def bridge_test(args: Namespace) -> bool:
             print(f"Unable to login to {BRIDGE} [{bridge_api.host}]")
             await bridge_api.close()
             sys.exit(1)
-    print("Logged:", logged)
+    print(f"[{bridge_api.host}] {BRIDGE}: Logged = {logged}")
     print("-" * 20)
     devices = await bridge_api.get_all_devices()
     print("Devices:", devices)
@@ -174,16 +177,16 @@ async def bridge_test(args: Namespace) -> bool:
 
     if vedo_enabled:
         print("Serial Bridge: VEDO Enabled !")
-        await vedo_test(args, bridge_api)
+        await vedo_test(session, args, bridge_api)
 
-    print("Logout & close session")
+    print(f"[{bridge_api.host}] {BRIDGE}: Logout")
     await bridge_api.logout()
-    await bridge_api.close()
 
     return vedo_enabled
 
 
 async def vedo_test(
+    session: ClientSession,
     args: Namespace,
     bridge_api: ComeliteSerialBridgeApi | None = None,
 ) -> None:
@@ -191,7 +194,7 @@ async def vedo_test(
     api: ComelitCommonApi
 
     if not bridge_api:
-        api = ComelitVedoApi(args.vedo, args.vedo_port, args.vedo_pin)
+        api = ComelitVedoApi(args.vedo, args.vedo_port, args.vedo_pin, session)
         logged = False
         try:
             logged = await api.login()
@@ -202,15 +205,15 @@ async def vedo_test(
                 print(f"Unable to login to {VEDO} [{api.host}]")
                 await api.close()
                 sys.exit(1)
-        print("Logged:", logged)
+        print(f"[{api.host}] {VEDO}: Logged = {logged}")
     else:
         api = bridge_api
-        print("Logged: via BRIDGE")
+        print(f"[{api.host}] {VEDO}: Logged via {BRIDGE}")
     print("-" * 20)
     try:
         alarm_data = await api.get_all_areas_and_zones()
     except (CannotAuthenticate, CannotRetrieveData):
-        print(f"Unable to retrieve data for {VEDO} [{api.host}]")
+        print(f"[{api.host}] Unable to retrieve data for {VEDO}")
         await api.logout()
         await api.close()
         sys.exit(2)
@@ -225,9 +228,8 @@ async def vedo_test(
     if args.test:
         await execute_alarm_test(api, alarm_data["alarm_areas"][INDEX])
         print("-" * 20)
-    print("Logout & close session")
+    print(f"[{api.host}] {VEDO}: Logout")
     await api.logout()
-    await api.close()
 
 
 async def main() -> None:
@@ -237,18 +239,26 @@ async def main() -> None:
     print("-" * 20)
     print(f"aiocomelit version: {__version__}")
     print("-" * 20)
-    vedo_enabled = await bridge_test(args)
 
-    # VEDO is accessible via Serial bridge, no direct access
-    if vedo_enabled:
-        return
+    # Create aiohttp.ClientSsession
+    print("Creating HTTP ClientSession")
+    jar = CookieJar(unsafe=True)
+    connector = TCPConnector(force_close=True)
+    session = ClientSession(cookie_jar=jar, connector=connector)
 
-    # VEDO system mandatorily requires a pin for direct access
-    if not args.vedo_pin:
-        print("Comelit VEDO System: missing PIN. Skipping tests")
-        parser.print_help()
-        return
-    await vedo_test(args, None)
+    bridge_vedo_enabled = await bridge_test(session, args)
+
+    # VEDO is not accessible via Serial bridge, need direct access
+    if not bridge_vedo_enabled:
+        # VEDO system mandatorily requires a pin for direct access
+        if not args.vedo_pin:
+            print(f"{VEDO}: Missing PIN. Skipping tests")
+            parser.print_help()
+            return
+        await vedo_test(session, args, None)
+
+    print("Closing HTTP ClientSession")
+    await session.close()
 
 
 def set_logging() -> None:

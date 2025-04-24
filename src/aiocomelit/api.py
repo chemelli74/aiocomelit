@@ -95,7 +95,9 @@ class ComelitCommonApi:
     _vedo_url_suffix: str = ""
     _vedo_url_action: str = ""
 
-    def __init__(self, host: str, port: int, pin: int) -> None:
+    def __init__(
+        self, host: str, port: int, pin: int, session: aiohttp.ClientSession
+    ) -> None:
         """Initialize the session."""
         self.host = f"{host}:{port}"
         self.device_pin = pin
@@ -109,7 +111,7 @@ class ComelitCommonApi:
             "X-Requested-With": "XMLHttpRequest",
             "Connection": "keep-alive",
         }
-        self._session: aiohttp.ClientSession
+        self._session = session
         self._json_data: list[dict[Any, Any]] = [{}, {}, {}, {}, {}]
 
     async def _get_page_result(
@@ -199,12 +201,6 @@ class ComelitCommonApi:
     async def _login(self, payload: dict[str, Any], host_type: str) -> bool:
         """Login into Comelit device."""
         _LOGGER.debug("Logging into host %s [%s]", self.host, host_type)
-
-        if not await self._is_session_active():
-            _LOGGER.debug("Creating HTTP ClientSession")
-            jar = aiohttp.CookieJar(unsafe=True)
-            connector = aiohttp.TCPConnector(force_close=True)
-            self._session = aiohttp.ClientSession(cookie_jar=jar, connector=connector)
 
         if await self._check_logged_in(host_type):
             return True
@@ -451,9 +447,11 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
     _vedo_url_suffix: str = "vedo_"
     _vedo_url_action: str = "/user/action.cgi?"
 
-    def __init__(self, host: str, port: int, bridge_pin: int) -> None:
+    def __init__(
+        self, host: str, port: int, bridge_pin: int, session: aiohttp.ClientSession
+    ) -> None:
         """Initialize the session."""
-        super().__init__(host, port, bridge_pin)
+        super().__init__(host, port, bridge_pin, session)
         self._devices: dict[str, dict[int, ComelitSerialBridgeObject]] = {}
         self._last_clima_command: datetime | None = None
         self._semaphore = asyncio.Semaphore()
