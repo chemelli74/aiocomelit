@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.12.0 (2025-04-24)
+
+### Features
+
+- Pass clientsession(aiohttp) as parameter (#258) ([`42e2c29`](https://github.com/chemelli74/aiocomelit/commit/42e2c297c7e601455278b5cedc486d2383ab9491))
+
+
+### Build system
+
+- Improve environment (#257) ([`8913356`](https://github.com/chemelli74/aiocomelit/commit/8913356dcd8424860b9e9732b449e9d8f418e277))
+
+
 ## v0.11.3 (2025-03-25)
 
 ### Bug fixes
