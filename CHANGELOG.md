@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.12.1 (2025-05-11)
+
+### Bug fixes
+
+- Handle old bridges that respond with empty data (#266) ([`5cfdf5b`](https://github.com/chemelli74/aiocomelit/commit/5cfdf5b4cdf56fff43d01426d9acc28eddc8aefc))
+
+
 ## v0.12.0 (2025-04-24)
 
 ### Features
