@@ -556,7 +556,7 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
             None,
             functools.partial(pint.UnitRegistry, cache_folder=":auto:"),
         )
-        ureg.default_format = "~"
+        ureg.formatter.default_format = "~"
 
         for dev_type in (CLIMATE, COVER, LIGHT, IRRIGATION, OTHER, SCENARIO):
             reply_status, reply_json = await self._get_page_result(
