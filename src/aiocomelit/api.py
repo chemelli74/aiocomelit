@@ -572,10 +572,18 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
                 reply_status, reply_counter_json = await self._get_page_result(
                     "/user/counter.json",
                 )
-            devices = {}
+            devices: dict[int, ComelitSerialBridgeObject] = {}
+            desc = reply_json["desc"]
+            # Guard against some old bridges: sporadically return no data
+            if desc == []:
+                _LOGGER.debug(
+                    "Skipping '%s' because of empty data description", dev_type
+                )
+                self._devices.update({dev_type: devices})
+                continue
             for i in range(reply_json["num"]):
                 # Guard against "scenario": list 32 devices even if none is configured
-                if reply_json["desc"][i] == "":
+                if desc[i] == "":
                     continue
                 status = reply_json["status"][i]
                 power = 0.0
