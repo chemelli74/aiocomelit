@@ -562,6 +562,19 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
             reply_status, reply_json = await self._get_page_result(
                 f"/user/icon_desc.json?type={dev_type}",
             )
+
+            if reply_json["num"] > 0 and reply_json["desc"] is None:
+                _LOGGER.debug("Login expired accessing %s, re-login attempt", dev_type)
+                logged = await self.login()
+                if not logged:
+                    raise CannotRetrieveData(
+                        "Login expired and not working after a retry",
+                    )
+                _LOGGER.debug("Re-login successful")
+                reply_status, reply_json = await self._get_page_result(
+                    f"/user/icon_desc.json?type={dev_type}",
+                )
+
             _LOGGER.debug(
                 "List of devices of type %s: %s",
                 dev_type,
