@@ -25,6 +25,7 @@ from .const import (
     OTHER,
     SCENARIO,
     SLEEP_BETWEEN_BRIDGE_CALLS,
+    SLEEP_BETWEEN_BRIDGE_LOGINS,
     SLEEP_BETWEEN_VEDO_CALLS,
     STATE_COVER,
     STATE_ON,
@@ -195,15 +196,20 @@ class ComelitCommonApi:
         await asyncio.sleep(seconds)
 
     @abstractmethod
-    async def login(self) -> bool:
+    async def login(self, relogin: bool = False) -> bool:
         """Login to Comelit device."""
 
-    async def _login(self, payload: dict[str, Any], host_type: str) -> bool:
+    async def _login(
+        self, payload: dict[str, Any], host_type: str, relogin: bool = False
+    ) -> bool:
         """Login into Comelit device."""
         _LOGGER.debug("Logging into host %s [%s]", self.host, host_type)
 
         if await self._check_logged_in(host_type):
             return True
+
+        if host_type == BRIDGE and relogin:
+            await self._sleep_between_call(SLEEP_BETWEEN_BRIDGE_LOGINS)
 
         cookies = await self._post_page_result("/login.cgi", payload)
         _LOGGER.debug("Cookies for host %s: %s", self.host, cookies)
@@ -542,10 +548,10 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
         )
         return cast("int", reply_json["status"][index])
 
-    async def login(self) -> bool:
+    async def login(self, relogin: bool = False) -> bool:
         """Login to Serial Bridge device."""
         payload = {"dom": self.device_pin}
-        return await self._login(payload, BRIDGE)
+        return await self._login(payload, BRIDGE, relogin)
 
     async def get_all_devices(self) -> dict[str, dict[int, ComelitSerialBridgeObject]]:
         """Get all connected devices."""
@@ -565,7 +571,8 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
 
             if reply_json["num"] > 0 and reply_json["desc"] == []:
                 _LOGGER.debug("Login expired accessing %s, re-login attempt", dev_type)
-                logged = await self.login()
+                await self._sleep_between_call(SLEEP_BETWEEN_BRIDGE_LOGINS)
+                logged = await self.login(relogin=True)
                 if not logged:
                     raise CannotRetrieveData(
                         "Login expired and not working after a retry",
@@ -638,7 +645,7 @@ class ComelitVedoApi(ComelitCommonApi):
     _vedo_url_suffix: str = ""
     _vedo_url_action: str = "/action.cgi?vedo=1&"
 
-    async def login(self) -> bool:
+    async def login(self, relogin: bool = False) -> bool:
         """Login to VEDO system."""
         payload = {"code": self.device_pin}
-        return await self._login(payload, VEDO)
+        return await self._login(payload, VEDO, relogin)
