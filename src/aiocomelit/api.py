@@ -563,7 +563,7 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
                 f"/user/icon_desc.json?type={dev_type}",
             )
 
-            if reply_json["num"] > 0 and reply_json["desc"] is None:
+            if reply_json["num"] > 0 and reply_json["desc"] == []:
                 _LOGGER.debug("Login expired accessing %s, re-login attempt", dev_type)
                 logged = await self.login()
                 if not logged:
