@@ -213,7 +213,7 @@ async def vedo_test(
             pass
         finally:
             if not logged:
-                print(f"[{api_logging}] Unable to login")
+                print(f"[{api_logging}] Unable to login to {VEDO}")
                 await api.close()
                 sys.exit(1)
         print(f"[{api_logging}] Logged = {logged}")
