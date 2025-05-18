@@ -92,14 +92,14 @@ class AlarmDataObject(TypedDict):
 class ComelitCommonApi:
     """Common API calls for Comelit SimpleHome devices."""
 
-    _vedo_url_suffix: str = ""
-    _vedo_url_action: str = ""
+    _vedo_url_suffix: str
+    _vedo_url_action: str
+    _host_type: str
 
     def __init__(
         self, host: str, port: int, pin: int, session: aiohttp.ClientSession
     ) -> None:
         """Initialize the session."""
-        self._host = f"{host}:{port}"
         self.device_pin = pin
         self.base_url = f"http://{host}:{port}"
         self._headers = {
@@ -111,6 +111,7 @@ class ComelitCommonApi:
             "X-Requested-With": "XMLHttpRequest",
             "Connection": "keep-alive",
         }
+        self._logging = f"{self._host_type} ({host}:{port})"
         self._session = session
         self._json_data: list[dict[Any, Any]] = [{}, {}, {}, {}, {}]
 
@@ -120,7 +121,7 @@ class ComelitCommonApi:
         reply_json: bool = True,
     ) -> tuple[int, dict[str, Any]]:
         """Return status and data from a GET query."""
-        _LOGGER.debug("GET page %s [%s]", page, self._host)
+        _LOGGER.debug("[%s] GET page %s", self._logging, page)
         timestamp = datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M:%S")
         url = f"{self.base_url}{page}&_={timestamp}"
         try:
@@ -133,16 +134,16 @@ class ComelitCommonApi:
             raise CannotConnect("Connection error during GET") from exc
 
         _LOGGER.debug(
-            "GET response %s [%s]",
+            "[%s] GET response %s",
+            self._logging,
             await response.text(),
-            self._host,
         )
 
         if response.status != HTTPStatus.OK:
             raise CannotRetrieveData(f"GET response status {response.status}")
 
         if not reply_json:
-            _LOGGER.debug("GET response is empty [%s]", self._host)
+            _LOGGER.debug("[%s] GET response is empty", self._logging)
             return response.status, {}
 
         return response.status, await response.json()
@@ -153,7 +154,7 @@ class ComelitCommonApi:
         payload: dict[str, Any],
     ) -> SimpleCookie:
         """Return status and data from a POST query."""
-        _LOGGER.debug("POST page %s [%s]", page, self._host)
+        _LOGGER.debug("[%s] POST page %s", self._logging, page)
         url = f"{self.base_url}{page}"
         try:
             response = await self._session.post(
@@ -165,7 +166,7 @@ class ComelitCommonApi:
         except (TimeoutError, aiohttp.ClientConnectorError) as exc:
             raise CannotConnect("Connection error during POST") from exc
 
-        _LOGGER.debug("POST response %s [%s]", await response.text(), self._host)
+        _LOGGER.debug("[%s] POST response %s", self._logging, await response.text())
 
         if response.status != HTTPStatus.OK:
             raise CannotRetrieveData(f"POST response status {response.status}")
@@ -181,7 +182,7 @@ class ComelitCommonApi:
         reply_status, reply_json = await self._get_page_result("/login.json")
 
         logged: bool
-        _LOGGER.debug("%s login reply: %s", host_type, reply_json)
+        _LOGGER.debug("[%s] Login reply: %s", self._logging, reply_json)
         if host_type == BRIDGE:
             logged = reply_json["domus"] != "000000000000"
         else:
@@ -191,7 +192,9 @@ class ComelitCommonApi:
 
     async def _sleep_between_call(self, seconds: float) -> None:
         """Sleep between one call and the next one."""
-        _LOGGER.debug("Sleeping for %s seconds before next call", seconds)
+        _LOGGER.debug(
+            "[%s] Sleeping for %s seconds before next call", self._logging, seconds
+        )
         await asyncio.sleep(seconds)
 
     @abstractmethod
@@ -200,19 +203,17 @@ class ComelitCommonApi:
 
     async def _login(self, payload: dict[str, Any], host_type: str) -> bool:
         """Login into Comelit device."""
-        _LOGGER.debug("Logging into host %s [%s]", self._host, host_type)
+        _LOGGER.debug("[%s] Logging in", self._logging)
 
         if await self._check_logged_in(host_type):
             return True
 
         cookies = await self._post_page_result("/login.cgi", payload)
-        _LOGGER.debug("Cookies for host %s: %s", self._host, cookies)
+        _LOGGER.debug("[%s] Cookies: %s", self._logging, cookies)
 
         if not cookies:
             _LOGGER.warning(
-                "Authentication failed for host %s [%s]: no cookies received",
-                self._host,
-                host_type,
+                "[%s] Authentication failed: no cookies received", self._logging
             )
             raise CannotAuthenticate
 
@@ -277,7 +278,7 @@ class ComelitCommonApi:
             human_status=AlarmAreaState.UNKNOWN,
         )
         area.human_status = await self._translate_area_status(area)
-        _LOGGER.debug(area)
+        _LOGGER.debug("[%s] Area: %s", self._logging, area)
         return area
 
     async def _create_zone_object(
@@ -297,7 +298,7 @@ class ComelitCommonApi:
             human_status=AlarmZoneState.UNKNOWN,
         )
         zone.human_status = await self._translate_zone_status(zone)
-        _LOGGER.debug(zone)
+        _LOGGER.debug("[%s] Zone: %s", self._logging, zone)
         return zone
 
     async def _async_get_page_data(
@@ -308,7 +309,7 @@ class ComelitCommonApi:
     ) -> tuple[bool, dict[str, Any]]:
         """Return status and data from a specific GET query."""
         reply_status, reply_json = await self._get_page_result(page)
-        _LOGGER.debug("Alarm %s: %s", desc, reply_json)
+        _LOGGER.debug("[%s] Alarm %s: %s", self._logging, desc, reply_json)
         present = present_check in reply_json["present"] if "_desc" in page else True
         return (reply_json["logged"] and present), reply_json
 
@@ -388,7 +389,9 @@ class ComelitCommonApi:
             page = info["page"]
             present = info["present"]
             if "_desc" in page and self._json_data[index]:
-                _LOGGER.debug("Data for %s already retrieved, skipping", desc)
+                _LOGGER.debug(
+                    "[%s] Data for %s already retrieved, skipping", self._logging, desc
+                )
                 continue
             await self._sleep_between_call(SLEEP_BETWEEN_VEDO_CALLS)
             reply_status, reply_json = await self._async_get_page_data(
@@ -397,7 +400,11 @@ class ComelitCommonApi:
                 present,
             )
             if not reply_status:
-                _LOGGER.debug("Login expired accessing %s, re-login attempt", desc)
+                _LOGGER.debug(
+                    "[%s] Login expired accessing %s, re-login attempt",
+                    self._logging,
+                    desc,
+                )
                 await self.login()
                 await self._sleep_between_call(SLEEP_BETWEEN_VEDO_CALLS)
                 reply_status, reply_json = await self._async_get_page_data(
@@ -409,14 +416,16 @@ class ComelitCommonApi:
                     raise CannotRetrieveData(
                         "Login expired and not working after a retry",
                     )
-                _LOGGER.debug("Re-login successful")
+                _LOGGER.debug("[%s] Re-login successful", self._logging)
             self._json_data.insert(index, reply_json)
 
         list_areas: list[int] = self._json_data[1]["present"]
         areas: dict[int, ComelitVedoAreaObject] = {}
         for i in range(len(list_areas)):
             if not list_areas[i]:
-                _LOGGER.debug("Alarm skipping non present AREA [%i]", i)
+                _LOGGER.debug(
+                    "[%s] Alarm skipping non present AREA [%i]", self._logging, i
+                )
                 continue
             area = await self._create_area_object(
                 self._json_data[1],
@@ -429,7 +438,9 @@ class ComelitCommonApi:
         zones: dict[int, ComelitVedoZoneObject] = {}
         for i in range(len(list_zones)):
             if not int(list_zones[i]):
-                _LOGGER.debug("Alarm skipping non present ZONE [%i]", i)
+                _LOGGER.debug(
+                    "[%s] Alarm skipping non present ZONE [%i]", self._logging, i
+                )
                 continue
             zone = await self._create_zone_object(
                 self._json_data[2],
@@ -446,6 +457,7 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
 
     _vedo_url_suffix: str = "vedo_"
     _vedo_url_action: str = "/user/action.cgi?"
+    _host_type = BRIDGE
 
     def __init__(
         self, host: str, port: int, bridge_pin: int, session: aiohttp.ClientSession
@@ -484,7 +496,8 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
             )
             if delta_seconds > 0:
                 _LOGGER.debug(
-                    "Climate calls needs to be queued (%ss) for proper execution",
+                    "[%s] Climate calls needs to be queued (%ss) for proper execution",
+                    self._logging,
                     delta_seconds,
                 )
                 await self._sleep_between_call(delta_seconds)
@@ -535,7 +548,8 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
             f"/user/icon_status.json?type={device_type}",
         )
         _LOGGER.debug(
-            "Device %s[%s] status: %s",
+            "[%s[ Device %s[%s] status: %s",
+            self._logging,
             device_type,
             index,
             reply_json["status"][index],
@@ -549,7 +563,7 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
 
     async def get_all_devices(self) -> dict[str, dict[int, ComelitSerialBridgeObject]]:
         """Get all connected devices."""
-        _LOGGER.debug("Getting all devices for host %s", self._host)
+        _LOGGER.debug("[%s] Getting all devices", self._logging)
 
         loop = asyncio.get_running_loop()
         ureg = await loop.run_in_executor(
@@ -563,7 +577,8 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
                 f"/user/icon_desc.json?type={dev_type}",
             )
             _LOGGER.debug(
-                "List of devices of type %s: %s",
+                "[%s] List of devices of type %s: %s",
+                self._logging,
                 dev_type,
                 reply_json,
             )
@@ -577,7 +592,9 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
             # Guard against some old bridges: sporadically return no data
             if desc == []:
                 _LOGGER.debug(
-                    "Skipping '%s' because of empty data description", dev_type
+                    "[%s] Skipping '%s' because of empty data description",
+                    self._logging,
+                    dev_type,
                 )
                 self._devices.update({dev_type: devices})
                 continue
@@ -632,6 +649,7 @@ class ComelitVedoApi(ComelitCommonApi):
 
     _vedo_url_suffix: str = ""
     _vedo_url_action: str = "/action.cgi?vedo=1&"
+    _host_type = VEDO
 
     async def login(self) -> bool:
         """Login to VEDO system."""
