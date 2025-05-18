@@ -109,26 +109,34 @@ def get_arguments() -> tuple[ArgumentParser, Namespace]:
     return parser, arguments
 
 
+def logger(host_type: str, host: str, port: str) -> str:
+    """Create logging string."""
+    return f"{host_type} ({host}:{port})"
+
+
 async def execute_device_test(
     api: ComeliteSerialBridgeApi,
     device: ComelitSerialBridgeObject,
     dev_type: str,
+    api_logging: str,
 ) -> None:
     """Execute a test routine on a specific device type."""
-    print(f"Test {dev_type} device: {device.name}")
-    print("Status before: ", await api.get_device_status(dev_type, device.index))
+    print(f"[{api_logging}] Test {dev_type} device: {device.name}")
+    status = await api.get_device_status(dev_type, device.index)
+    print(f"[{api_logging}] Status before: {status}")
     await api.set_device_status(dev_type, device.index, STATE_ON)
-    print("Status after: ", await api.get_device_status(dev_type, device.index))
+    status = await api.get_device_status(dev_type, device.index)
+    print(f"[{api_logging}] Status after: {status}")
 
 
 async def execute_alarm_test(
-    api: ComelitCommonApi, area: ComelitVedoAreaObject
+    api: ComelitCommonApi, area: ComelitVedoAreaObject, api_logging: str
 ) -> None:
     """Execute a test routine on a specific VEDO zone."""
-    print(f"Test zone: {area.name}")
-    print("Status before: ", await api.get_area_status(area))
+    print(f"[{api_logging}] Test zone: {area.name}")
+    print(f"[{api_logging}] Status before: {await api.get_area_status(area)}")
     await api.set_zone_status(area.index, ALARM_ENABLE)
-    print("Status after: ", await api.get_area_status(area))
+    print(f"[{api_logging}] Status after: {await api.get_area_status(area)}")
 
 
 async def bridge_test(session: ClientSession, args: Namespace) -> bool:
@@ -136,7 +144,8 @@ async def bridge_test(session: ClientSession, args: Namespace) -> bool:
     bridge_api = ComeliteSerialBridgeApi(
         args.bridge, args.bridge_port, args.bridge_pin, session
     )
-    bridge_host = f"{args.bridge}:{args.port}"
+    api_logging = logger(BRIDGE, args.bridge, args.bridge_port)
+
     logged = False
     try:
         logged = await bridge_api.login()
@@ -144,30 +153,30 @@ async def bridge_test(session: ClientSession, args: Namespace) -> bool:
         pass
     finally:
         if not logged:
-            print(f"Unable to login to {BRIDGE} [{bridge_host}]")
+            print(f"[{api_logging}] Unable to login")
             await bridge_api.close()
             sys.exit(1)
-    print(f"[{bridge_host}] {BRIDGE}: Logged = {logged}")
+    print(f"[{api_logging}] Logged = {logged}")
     print("-" * 20)
     devices = await bridge_api.get_all_devices()
-    print("Devices:", devices)
+    print(f"[{api_logging}] Devices: {devices}")
     print("-" * 20)
     if args.test:
         for device in devices[LIGHT].values():
             if device.index == INDEX:
-                await execute_device_test(bridge_api, device, LIGHT)
+                await execute_device_test(bridge_api, device, LIGHT, api_logging)
                 break
         for device in devices[COVER].values():
             if device.index == INDEX:
-                await execute_device_test(bridge_api, device, COVER)
+                await execute_device_test(bridge_api, device, COVER, api_logging)
                 break
         for device in devices[IRRIGATION].values():
             if device.index == INDEX:
-                await execute_device_test(bridge_api, device, IRRIGATION)
+                await execute_device_test(bridge_api, device, IRRIGATION, api_logging)
                 break
         for device in devices[OTHER].values():
             if device.index == INDEX:
-                await execute_device_test(bridge_api, device, OTHER)
+                await execute_device_test(bridge_api, device, OTHER, api_logging)
                 break
         print("-" * 20)
 
@@ -177,10 +186,10 @@ async def bridge_test(session: ClientSession, args: Namespace) -> bool:
     )
 
     if vedo_enabled:
-        print("Serial Bridge: VEDO Enabled !")
+        print(f"[{api_logging}] VEDO Enabled !")
         await vedo_test(session, args, bridge_api)
 
-    print(f"[{bridge_host}] {BRIDGE}: Logout")
+    print(f"[{api_logging}] Logout")
     await bridge_api.logout()
 
     return vedo_enabled
@@ -193,10 +202,10 @@ async def vedo_test(
 ) -> None:
     """Test code for Comelit VEDO system."""
     api: ComelitCommonApi
-    vedo_host = f"{args.vedo}:{args.port}"
 
     if not bridge_api:
         api = ComelitVedoApi(args.vedo, args.vedo_port, args.vedo_pin, session)
+        api_logging = logger(VEDO, args.vedo, args.vedo_port)
         logged = False
         try:
             logged = await api.login()
@@ -204,33 +213,34 @@ async def vedo_test(
             pass
         finally:
             if not logged:
-                print(f"Unable to login to {VEDO} [{vedo_host}]")
+                print(f"[{api_logging}] Unable to login to {VEDO}")
                 await api.close()
                 sys.exit(1)
-        print(f"[{vedo_host}] {VEDO}: Logged = {logged}")
+        print(f"[{api_logging}] Logged = {logged}")
     else:
         api = bridge_api
-        print(f"[{vedo_host}] {VEDO}: Logged via {BRIDGE}")
+        api_logging = logger(BRIDGE, args.bridge, args.bridge_port)
+        print(f"[{api_logging}] {VEDO} logged")
     print("-" * 20)
     try:
         alarm_data = await api.get_all_areas_and_zones()
     except (CannotAuthenticate, CannotRetrieveData):
-        print(f"[{vedo_host}] Unable to retrieve data for {VEDO}")
+        print(f"[{api_logging}] Unable to retrieve data for {VEDO}")
         await api.logout()
         await api.close()
         sys.exit(2)
-    print("AREAS:")
+    print(f"[{api_logging}] AREAS:")
     for area in alarm_data["alarm_areas"]:
         print(alarm_data["alarm_areas"][area])
     print("-" * 20)
-    print("ZONES:")
+    print(f"[{api_logging}] ZONES:")
     for zone in alarm_data["alarm_zones"]:
         print(alarm_data["alarm_zones"][zone])
     print("-" * 20)
     if args.test:
-        await execute_alarm_test(api, alarm_data["alarm_areas"][INDEX])
+        await execute_alarm_test(api, alarm_data["alarm_areas"][INDEX], api_logging)
         print("-" * 20)
-    print(f"[{vedo_host}] {VEDO}: Logout")
+    print(f"{api_logging} Logout")
     await api.logout()
 
 
