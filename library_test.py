@@ -136,6 +136,7 @@ async def bridge_test(session: ClientSession, args: Namespace) -> bool:
     bridge_api = ComeliteSerialBridgeApi(
         args.bridge, args.bridge_port, args.bridge_pin, session
     )
+    bridge_host = f"{args.bridge}:{args.port}"
     logged = False
     try:
         logged = await bridge_api.login()
@@ -143,10 +144,10 @@ async def bridge_test(session: ClientSession, args: Namespace) -> bool:
         pass
     finally:
         if not logged:
-            print(f"Unable to login to {BRIDGE} [{bridge_api.host}]")
+            print(f"Unable to login to {BRIDGE} [{bridge_host}]")
             await bridge_api.close()
             sys.exit(1)
-    print(f"[{bridge_api.host}] {BRIDGE}: Logged = {logged}")
+    print(f"[{bridge_host}] {BRIDGE}: Logged = {logged}")
     print("-" * 20)
     devices = await bridge_api.get_all_devices()
     print("Devices:", devices)
@@ -179,7 +180,7 @@ async def bridge_test(session: ClientSession, args: Namespace) -> bool:
         print("Serial Bridge: VEDO Enabled !")
         await vedo_test(session, args, bridge_api)
 
-    print(f"[{bridge_api.host}] {BRIDGE}: Logout")
+    print(f"[{bridge_host}] {BRIDGE}: Logout")
     await bridge_api.logout()
 
     return vedo_enabled
@@ -192,6 +193,7 @@ async def vedo_test(
 ) -> None:
     """Test code for Comelit VEDO system."""
     api: ComelitCommonApi
+    vedo_host = f"{args.vedo}:{args.port}"
 
     if not bridge_api:
         api = ComelitVedoApi(args.vedo, args.vedo_port, args.vedo_pin, session)
@@ -202,18 +204,18 @@ async def vedo_test(
             pass
         finally:
             if not logged:
-                print(f"Unable to login to {VEDO} [{api.host}]")
+                print(f"Unable to login to {VEDO} [{vedo_host}]")
                 await api.close()
                 sys.exit(1)
-        print(f"[{api.host}] {VEDO}: Logged = {logged}")
+        print(f"[{vedo_host}] {VEDO}: Logged = {logged}")
     else:
         api = bridge_api
-        print(f"[{api.host}] {VEDO}: Logged via {BRIDGE}")
+        print(f"[{vedo_host}] {VEDO}: Logged via {BRIDGE}")
     print("-" * 20)
     try:
         alarm_data = await api.get_all_areas_and_zones()
     except (CannotAuthenticate, CannotRetrieveData):
-        print(f"[{api.host}] Unable to retrieve data for {VEDO}")
+        print(f"[{vedo_host}] Unable to retrieve data for {VEDO}")
         await api.logout()
         await api.close()
         sys.exit(2)
@@ -228,7 +230,7 @@ async def vedo_test(
     if args.test:
         await execute_alarm_test(api, alarm_data["alarm_areas"][INDEX])
         print("-" * 20)
-    print(f"[{api.host}] {VEDO}: Logout")
+    print(f"[{vedo_host}] {VEDO}: Logout")
     await api.logout()
 
 
