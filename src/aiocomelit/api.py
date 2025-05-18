@@ -595,9 +595,7 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
                 if self._initialized:
                     _LOGGER.debug("Skipping '%s': empty data description", dev_type)
                     continue
-                raise CannotRetrieveData(
-                    f"[{self.host}] Empty reply during initialization"
-                )
+                raise CannotRetrieveData("Empty reply during initialization")
             for i in range(reply_json["num"]):
                 # Guard against "scenario": list 32 devices even if none is configured
                 if desc[i] == "":
