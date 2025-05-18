@@ -127,7 +127,7 @@ class ComelitCommonApi:
             response = await self._session.get(
                 url,
                 headers=self._headers,
-                timeout=10,
+                timeout=aiohttp.ClientTimeout(10),
             )
         except (TimeoutError, aiohttp.ClientConnectorError) as exc:
             raise CannotConnect("Connection error during GET") from exc
@@ -160,7 +160,7 @@ class ComelitCommonApi:
                 url,
                 data=payload,
                 headers=self._headers,
-                timeout=10,
+                timeout=aiohttp.ClientTimeout(10),
             )
         except (TimeoutError, aiohttp.ClientConnectorError) as exc:
             raise CannotConnect("Connection error during POST") from exc
