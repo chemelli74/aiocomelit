@@ -549,7 +549,7 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
             f"/user/icon_status.json?type={device_type}",
         )
         _LOGGER.debug(
-            "[%s[ Device %s[%s] status: %s",
+            "[%s] Device %s[%s] status: %s",
             self._logging,
             device_type,
             index,
@@ -593,7 +593,11 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
             # Guard against some old bridges: sporadically return no data
             if desc == []:
                 if self._initialized:
-                    _LOGGER.debug("Skipping '%s': empty data description", dev_type)
+                    _LOGGER.debug(
+                        "[%s] Skipping '%s': empty data description",
+                        self._logging,
+                        dev_type,
+                    )
                     continue
                 raise CannotRetrieveData("Empty reply during initialization")
             for i in range(reply_json["num"]):
