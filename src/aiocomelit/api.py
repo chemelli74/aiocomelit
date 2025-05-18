@@ -99,7 +99,7 @@ class ComelitCommonApi:
         self, host: str, port: int, pin: int, session: aiohttp.ClientSession
     ) -> None:
         """Initialize the session."""
-        self.host = f"{host}:{port}"
+        self._host = f"{host}:{port}"
         self.device_pin = pin
         self.base_url = f"http://{host}:{port}"
         self._headers = {
@@ -120,7 +120,7 @@ class ComelitCommonApi:
         reply_json: bool = True,
     ) -> tuple[int, dict[str, Any]]:
         """Return status and data from a GET query."""
-        _LOGGER.debug("GET page %s [%s]", page, self.host)
+        _LOGGER.debug("GET page %s [%s]", page, self._host)
         timestamp = datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M:%S")
         url = f"{self.base_url}{page}&_={timestamp}"
         try:
@@ -135,14 +135,14 @@ class ComelitCommonApi:
         _LOGGER.debug(
             "GET response %s [%s]",
             await response.text(),
-            self.host,
+            self._host,
         )
 
         if response.status != HTTPStatus.OK:
             raise CannotRetrieveData(f"GET response status {response.status}")
 
         if not reply_json:
-            _LOGGER.debug("GET response is empty [%s]", self.host)
+            _LOGGER.debug("GET response is empty [%s]", self._host)
             return response.status, {}
 
         return response.status, await response.json()
@@ -153,7 +153,7 @@ class ComelitCommonApi:
         payload: dict[str, Any],
     ) -> SimpleCookie:
         """Return status and data from a POST query."""
-        _LOGGER.debug("POST page %s [%s]", page, self.host)
+        _LOGGER.debug("POST page %s [%s]", page, self._host)
         url = f"{self.base_url}{page}"
         try:
             response = await self._session.post(
@@ -165,7 +165,7 @@ class ComelitCommonApi:
         except (TimeoutError, aiohttp.ClientConnectorError) as exc:
             raise CannotConnect("Connection error during POST") from exc
 
-        _LOGGER.debug("POST response %s [%s]", await response.text(), self.host)
+        _LOGGER.debug("POST response %s [%s]", await response.text(), self._host)
 
         if response.status != HTTPStatus.OK:
             raise CannotRetrieveData(f"POST response status {response.status}")
@@ -200,18 +200,18 @@ class ComelitCommonApi:
 
     async def _login(self, payload: dict[str, Any], host_type: str) -> bool:
         """Login into Comelit device."""
-        _LOGGER.debug("Logging into host %s [%s]", self.host, host_type)
+        _LOGGER.debug("Logging into host %s [%s]", self._host, host_type)
 
         if await self._check_logged_in(host_type):
             return True
 
         cookies = await self._post_page_result("/login.cgi", payload)
-        _LOGGER.debug("Cookies for host %s: %s", self.host, cookies)
+        _LOGGER.debug("Cookies for host %s: %s", self._host, cookies)
 
         if not cookies:
             _LOGGER.warning(
                 "Authentication failed for host %s [%s]: no cookies received",
-                self.host,
+                self._host,
                 host_type,
             )
             raise CannotAuthenticate
@@ -549,7 +549,7 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
 
     async def get_all_devices(self) -> dict[str, dict[int, ComelitSerialBridgeObject]]:
         """Get all connected devices."""
-        _LOGGER.debug("Getting all devices for host %s", self.host)
+        _LOGGER.debug("Getting all devices for host %s", self._host)
 
         loop = asyncio.get_running_loop()
         ureg = await loop.run_in_executor(
