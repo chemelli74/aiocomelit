@@ -467,6 +467,7 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
         self._devices: dict[str, dict[int, ComelitSerialBridgeObject]] = {}
         self._last_clima_command: datetime | None = None
         self._semaphore = asyncio.Semaphore()
+        self._initialized = False
 
     async def _translate_device_status(self, dev_type: str, dev_status: int) -> str:
         """Make status human readable."""
@@ -548,7 +549,7 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
             f"/user/icon_status.json?type={device_type}",
         )
         _LOGGER.debug(
-            "[%s[ Device %s[%s] status: %s",
+            "[%s] Device %s[%s] status: %s",
             self._logging,
             device_type,
             index,
@@ -591,13 +592,14 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
             desc = reply_json["desc"]
             # Guard against some old bridges: sporadically return no data
             if desc == []:
-                _LOGGER.debug(
-                    "[%s] Skipping '%s' because of empty data description",
-                    self._logging,
-                    dev_type,
-                )
-                self._devices.update({dev_type: devices})
-                continue
+                if self._initialized:
+                    _LOGGER.debug(
+                        "[%s] Skipping '%s': empty data description",
+                        self._logging,
+                        dev_type,
+                    )
+                    continue
+                raise CannotRetrieveData("Empty reply during initialization")
             for i in range(reply_json["num"]):
                 # Guard against "scenario": list 32 devices even if none is configured
                 if desc[i] == "":
@@ -630,6 +632,7 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
                 devices.update({i: dev_info})
             self._devices.update({dev_type: devices})
 
+        self._initialized = True
         return self._devices
 
     async def vedo_enabled(self, vedo_pin: int) -> bool:
