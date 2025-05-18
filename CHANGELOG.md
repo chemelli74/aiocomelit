@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.12.2 (2025-05-18)
+
+### Bug fixes
+
+- Handle old bridges that respond with empty data - follow up of #266 (#268) ([`5dba87f`](https://github.com/chemelli74/aiocomelit/commit/5dba87fff79059a98312f63ecd9b53c9ee1c4ead))
+
+
+### Refactoring
+
+- Improve logging (#271) ([`7343e96`](https://github.com/chemelli74/aiocomelit/commit/7343e9645a4e0375d460d0d1e8e6d237b89dba54))
+- Make host internal (#270) ([`a4c0d6e`](https://github.com/chemelli74/aiocomelit/commit/a4c0d6e7047a377ebec8cb953db5f8fccfdd9bd0))
+- Align timeout type to latest aiohttp (#269) ([`403d9f7`](https://github.com/chemelli74/aiocomelit/commit/403d9f7e2a1b10b1739433b6d649ce6aa9e72567))
+
+
 ## v0.12.1 (2025-05-11)
 
 ### Bug fixes
