@@ -45,7 +45,7 @@ class ComelitSerialBridgeObject:
     status: int
     human_status: str
     type: str
-    val: int | list[dict[Any, Any]]  # Temperature or Humidity (CLIMATE)
+    val: int | list[list[Any]]  # Temperature or Humidity (CLIMATE)
     protected: int
     zone: str
     power: float
