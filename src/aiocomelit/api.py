@@ -584,14 +584,15 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
                 reply_json,
             )
             reply_counter_json: dict[str, Any] = {}
-            if dev_type == OTHER and reply_json["num"] > 0:
+            num_devices = reply_json["num"]
+            if dev_type == OTHER and num_devices > 0:
                 reply_status, reply_counter_json = await self._get_page_result(
                     "/user/counter.json",
                 )
             devices: dict[int, ComelitSerialBridgeObject] = {}
             desc = reply_json["desc"]
             # Guard against some old bridges: sporadically return no data
-            if desc == []:
+            if desc == [] and num_devices > 0:
                 if self._initialized:
                     _LOGGER.debug(
                         "[%s] Skipping '%s': empty data description",
@@ -600,7 +601,7 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
                     )
                     continue
                 raise CannotRetrieveData("Empty reply during initialization")
-            for i in range(reply_json["num"]):
+            for i in range(num_devices):
                 # Guard against "scenario": list 32 devices even if none is configured
                 if desc[i] == "":
                     continue
