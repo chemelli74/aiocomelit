@@ -1,6 +1,6 @@
 """aiocomelit library."""
 
-__version__ = "0.12.2"
+__version__ = "0.12.3"
 
 from .api import (
     ComeliteSerialBridgeApi,

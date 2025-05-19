@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.12.3 (2025-05-19)
+
+### Bug fixes
+
+- Not all modules installed (#272) ([`304aaf3`](https://github.com/chemelli74/aiocomelit/commit/304aaf3440f47e5a0de614ec8c704301714ef3a2))
+
+
+### Refactoring
+
+- Improve typing (#273) ([`0cedce6`](https://github.com/chemelli74/aiocomelit/commit/0cedce63889d4c76c44b8b15c11b762636955d18))
+
+
 ## v0.12.2 (2025-05-18)
 
 ### Bug fixes
