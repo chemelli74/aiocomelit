@@ -3,7 +3,11 @@
 import logging
 from enum import Enum
 
+from aiohttp import ClientTimeout
+
 _LOGGER = logging.getLogger(__package__)
+
+DEFAULT_TIMEOUT = ClientTimeout(10)
 
 # Host types
 BRIDGE = "Serial bridge"

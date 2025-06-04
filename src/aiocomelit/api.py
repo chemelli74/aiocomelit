@@ -9,8 +9,8 @@ from http import HTTPStatus
 from http.cookies import SimpleCookie
 from typing import Any, TypedDict, cast
 
-import aiohttp
 import pint
+from aiohttp import ClientConnectorError, ClientSession
 from yarl import URL
 
 from .const import (
@@ -20,6 +20,7 @@ from .const import (
     BRIDGE,
     CLIMATE,
     COVER,
+    DEFAULT_TIMEOUT,
     IRRIGATION,
     LIGHT,
     OTHER,
@@ -96,9 +97,7 @@ class ComelitCommonApi:
     _vedo_url_action: str
     _host_type: str
 
-    def __init__(
-        self, host: str, port: int, pin: int, session: aiohttp.ClientSession
-    ) -> None:
+    def __init__(self, host: str, port: int, pin: int, session: ClientSession) -> None:
         """Initialize the session."""
         self.device_pin = pin
         self.base_url = f"http://{host}:{port}"
@@ -128,9 +127,9 @@ class ComelitCommonApi:
             response = await self._session.get(
                 url,
                 headers=self._headers,
-                timeout=aiohttp.ClientTimeout(10),
+                timeout=DEFAULT_TIMEOUT,
             )
-        except (TimeoutError, aiohttp.ClientConnectorError) as exc:
+        except (TimeoutError, ClientConnectorError) as exc:
             raise CannotConnect("Connection error during GET") from exc
 
         _LOGGER.debug(
@@ -161,9 +160,9 @@ class ComelitCommonApi:
                 url,
                 data=payload,
                 headers=self._headers,
-                timeout=aiohttp.ClientTimeout(10),
+                timeout=DEFAULT_TIMEOUT,
             )
-        except (TimeoutError, aiohttp.ClientConnectorError) as exc:
+        except (TimeoutError, ClientConnectorError) as exc:
             raise CannotConnect("Connection error during POST") from exc
 
         _LOGGER.debug("[%s] POST response %s", self._logging, await response.text())
@@ -460,7 +459,7 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
     _host_type = BRIDGE
 
     def __init__(
-        self, host: str, port: int, bridge_pin: int, session: aiohttp.ClientSession
+        self, host: str, port: int, bridge_pin: int, session: ClientSession
     ) -> None:
         """Initialize the session."""
         super().__init__(host, port, bridge_pin, session)
