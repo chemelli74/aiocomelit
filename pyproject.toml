@@ -1,8 +1,11 @@
-[tool.poetry]
+[project]
 name = "aiocomelit"
 version = "1.0.0"
+requires-python = "^3.12"
 description = "Python library to control Comelit Simplehome"
-authors = ["Simone Chemelli <simone.chemelli@gmail.com>"]
+authors = [
+{ name = "Simone Chemelli", email = "simone.chemelli@gmail.com" },
+]
 license = "Apache-2.0"
 readme = "README.md"
 repository = "https://github.com/chemelli74/aiocomelit"
@@ -16,16 +19,15 @@ classifiers = [
 packages = [
     { include = "aiocomelit", from = "src" },
 ]
+dependencies = [
+    "aiohttp",
+    "colorlog",
+    "pint",
+]
 
-[tool.poetry.urls]
+[project.urls]
 "Bug Tracker" = "https://github.com/chemelli74/aiocomelit/issues"
 "Changelog" = "https://github.com/chemelli74/aiocomelit/blob/main/CHANGELOG.md"
-
-[tool.poetry.dependencies]
-python = "^3.12"
-aiohttp = "*"
-colorlog = "*"
-pint = "*"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.1"
