@@ -62,6 +62,26 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 
 <!-- prettier-ignore-start -->
 <!-- readme: contributors -start -->
+<table>
+	<tbody>
+		<tr>
+            <td align="center">
+                <a href="https://github.com/chemelli74">
+                    <img src="https://avatars.githubusercontent.com/u/57354320?v=4" width="100;" alt="chemelli74"/>
+                    <br />
+                    <sub><b>Simone Chemelli</b></sub>
+                </a>
+            </td>
+            <td align="center">
+                <a href="https://github.com/joostlek">
+                    <img src="https://avatars.githubusercontent.com/u/7083755?v=4" width="100;" alt="joostlek"/>
+                    <br />
+                    <sub><b>Joost Lekkerkerker</b></sub>
+                </a>
+            </td>
+		</tr>
+	<tbody>
+</table>
 <!-- readme: contributors -end -->
 <!-- prettier-ignore-end -->
 
