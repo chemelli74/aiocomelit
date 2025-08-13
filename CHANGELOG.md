@@ -1,5 +1,29 @@
 # Changelog
 
+## v1.1.0-rc.1 (2025-08-13)
+
+### Features
+
+- Remove close() method ([`95d0ebf`](https://github.com/chemelli74/aiocomelit/commit/95d0ebf0990a556ff966f557de99dc8a512d36ef))
+
+
+### Build system
+
+- Mypy and pyproject ([`180f80e`](https://github.com/chemelli74/aiocomelit/commit/180f80ecffc5c0e387a7c5972c2eb8bf147da1b3))
+
+
+### Documentation
+
+- Contrib-readme-action has updated readme ([`3832342`](https://github.com/chemelli74/aiocomelit/commit/3832342cd9d15ed772f8abc36e976889b43b30e8))
+
+
+### Refactoring
+
+- Improve dev container settings ([`247dbbc`](https://github.com/chemelli74/aiocomelit/commit/247dbbc8489c34dd9cab52ca1dc1d16a09f0cf3b))
+- Update pyproject.toml ([`10b95b3`](https://github.com/chemelli74/aiocomelit/commit/10b95b3a2bbcb020918f4830bab0c6b55d1468fe))
+- Optimize performances (aiohttp timeout) ([`1328002`](https://github.com/chemelli74/aiocomelit/commit/132800280ae461d71e0d2c384d2284cab7fa9a20))
+
+
 ## v1.0.0 (2025-05-26)
 
 ## v0.12.3 (2025-05-19)
