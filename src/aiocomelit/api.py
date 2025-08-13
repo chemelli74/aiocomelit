@@ -227,11 +227,6 @@ class ComelitCommonApi:
             await self._post_page_result("/login.cgi", payload)
             self._session.cookie_jar.clear()
 
-    async def close(self) -> None:
-        """Comelit Simple Home close session."""
-        if await self._is_session_active():
-            await self._session.close()
-
     async def _translate_zone_status(
         self,
         zone: ComelitVedoZoneObject,

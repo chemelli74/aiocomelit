@@ -154,7 +154,7 @@ async def bridge_test(session: ClientSession, args: Namespace) -> bool:
     finally:
         if not logged:
             print(f"[{api_logging}] Unable to login")
-            await bridge_api.close()
+            await session.close()
             sys.exit(1)
     print(f"[{api_logging}] Logged = {logged}")
     print("-" * 20)
@@ -214,7 +214,7 @@ async def vedo_test(
         finally:
             if not logged:
                 print(f"[{api_logging}] Unable to login to {VEDO}")
-                await api.close()
+                await session.close()
                 sys.exit(1)
         print(f"[{api_logging}] Logged = {logged}")
     else:
@@ -227,7 +227,7 @@ async def vedo_test(
     except (CannotAuthenticate, CannotRetrieveData):
         print(f"[{api_logging}] Unable to retrieve data for {VEDO}")
         await api.logout()
-        await api.close()
+        await session.close()
         sys.exit(2)
     print(f"[{api_logging}] AREAS:")
     for area in alarm_data["alarm_areas"]:
