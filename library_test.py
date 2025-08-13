@@ -61,7 +61,6 @@ def get_arguments() -> tuple[ArgumentParser, Namespace]:
         "--bridge_vedo",
         "-bv",
         action="store_true",
-        default=False,
         help="Use Serial bridge to access VEDO",
     )
     parser.add_argument(
@@ -89,7 +88,6 @@ def get_arguments() -> tuple[ArgumentParser, Namespace]:
         "--test",
         "-t",
         action="store_true",
-        default=False,
         help="Execute test actions",
     )
     parser.add_argument(
