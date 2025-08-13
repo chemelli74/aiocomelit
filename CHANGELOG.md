@@ -1,14 +1,20 @@
 # Changelog
 
-## v1.1.0-rc.1 (2025-08-13)
+## v1.1.0 (2025-08-13)
 
 ### Features
 
-- Remove close() method ([`95d0ebf`](https://github.com/chemelli74/aiocomelit/commit/95d0ebf0990a556ff966f557de99dc8a512d36ef))
+- Remove close() method ([`f8a0255`](https://github.com/chemelli74/aiocomelit/commit/f8a025543926ef851e3c37e95b363e150fbc3b9d))
+
+
+### Testing
+
+- Remove wrong default for store_true ([`257e77c`](https://github.com/chemelli74/aiocomelit/commit/257e77cc26c422e8630609c689bd16eac4993ae9))
 
 
 ### Build system
 
+- Update pyproject ([`cbea0a5`](https://github.com/chemelli74/aiocomelit/commit/cbea0a59c8eef121ae189bfaaa74d254a90244cd))
 - Mypy and pyproject ([`180f80e`](https://github.com/chemelli74/aiocomelit/commit/180f80ecffc5c0e387a7c5972c2eb8bf147da1b3))
 
 
