@@ -178,7 +178,7 @@ class ComelitCommonApi:
 
     async def _check_logged_in(self, host_type: str) -> bool:
         """Check if login is active."""
-        reply_status, reply_json = await self._get_page_result("/login.json")
+        _, reply_json = await self._get_page_result("/login.json")
 
         logged: bool
         _LOGGER.debug("[%s] Login reply: %s", self._logging, reply_json)
@@ -302,7 +302,7 @@ class ComelitCommonApi:
         present_check: str | int | None = None,
     ) -> tuple[bool, dict[str, Any]]:
         """Return status and data from a specific GET query."""
-        reply_status, reply_json = await self._get_page_result(page)
+        _, reply_json = await self._get_page_result(page)
         _LOGGER.debug("[%s] Alarm %s: %s", self._logging, desc, reply_json)
         present = present_check in reply_json["present"] if "_desc" in page else True
         return (reply_json["logged"] and present), reply_json
@@ -328,7 +328,7 @@ class ComelitCommonApi:
             True  = force action
 
         """
-        reply_status, reply_json = await self._get_page_result(
+        reply_status, _ = await self._get_page_result(
             f"{self._vedo_url_action}{action}={index}&force={int(force)}",
             False,
         )
@@ -339,7 +339,7 @@ class ComelitCommonApi:
         area: ComelitVedoAreaObject,
     ) -> ComelitVedoAreaObject:
         """Get AREA status."""
-        reply_status, reply_json_area_stat = await self._async_get_page_data(
+        _, reply_json_area_stat = await self._async_get_page_data(
             "AREA statistics",
             f"/user/{self._vedo_url_suffix}area_stat.json",
         )
@@ -497,7 +497,7 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
                 )
                 await self._sleep_between_call(delta_seconds)
 
-        reply_status, reply_json = await self._get_page_result(
+        reply_status, _ = await self._get_page_result(
             f"/user/action.cgi?clima={index}&{mode}={action}&val={int(value * 10)}",
             False,
         )
@@ -531,7 +531,7 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
             1 = on/open
 
         """
-        reply_status, reply_json = await self._get_page_result(
+        reply_status, _ = await self._get_page_result(
             f"/user/action.cgi?type={device_type}&num{action}={index}",
             False,
         )
@@ -539,7 +539,7 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
 
     async def get_device_status(self, device_type: str, index: int) -> int:
         """Get device status."""
-        reply_status, reply_json = await self._get_page_result(
+        _, reply_json = await self._get_page_result(
             f"/user/icon_status.json?type={device_type}",
         )
         _LOGGER.debug(
@@ -568,7 +568,7 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
         ureg.formatter.default_format = "~"
 
         for dev_type in (CLIMATE, COVER, LIGHT, IRRIGATION, OTHER, SCENARIO):
-            reply_status, reply_json = await self._get_page_result(
+            _, reply_json = await self._get_page_result(
                 f"/user/icon_desc.json?type={dev_type}",
             )
             _LOGGER.debug(
@@ -580,7 +580,7 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
             reply_counter_json: dict[str, Any] = {}
             num_devices = reply_json["num"]
             if dev_type == OTHER and num_devices > 0:
-                reply_status, reply_counter_json = await self._get_page_result(
+                _, reply_counter_json = await self._get_page_result(
                     "/user/counter.json",
                 )
             devices: dict[int, ComelitSerialBridgeObject] = {}
