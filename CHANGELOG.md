@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.1.1-rc.1 (2025-10-06)
+
+### Bug fixes
+
+- Improve logged in check ([`0f1cbe5`](https://github.com/chemelli74/aiocomelit/commit/0f1cbe5abf77e1c5c8f22721042714bcbe38d52b))
+
+
 ## v1.1.0 (2025-08-13)
 
 ### Features
