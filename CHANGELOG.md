@@ -1,10 +1,15 @@
 # Changelog
 
-## v1.1.1-rc.1 (2025-10-06)
+## v1.1.1 (2025-10-06)
 
 ### Bug fixes
 
-- Improve logged in check ([`0f1cbe5`](https://github.com/chemelli74/aiocomelit/commit/0f1cbe5abf77e1c5c8f22721042714bcbe38d52b))
+- Improve logged in check ([`d92ec73`](https://github.com/chemelli74/aiocomelit/commit/d92ec73125678e11533a717ee481479a25f23671))
+
+
+### Refactoring
+
+- Pin as string ([`87f7629`](https://github.com/chemelli74/aiocomelit/commit/87f762914e6d88277f38d6aaab235091541c24f3))
 
 
 ## v1.1.0 (2025-08-13)
