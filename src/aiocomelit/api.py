@@ -97,7 +97,7 @@ class ComelitCommonApi:
     _vedo_url_action: str
     _host_type: str
 
-    def __init__(self, host: str, port: int, pin: int, session: ClientSession) -> None:
+    def __init__(self, host: str, port: int, pin: str, session: ClientSession) -> None:
         """Initialize the session."""
         self.device_pin = pin
         self.base_url = f"http://{host}:{port}"
@@ -454,7 +454,7 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
     _host_type = BRIDGE
 
     def __init__(
-        self, host: str, port: int, bridge_pin: int, session: ClientSession
+        self, host: str, port: int, bridge_pin: str, session: ClientSession
     ) -> None:
         """Initialize the session."""
         super().__init__(host, port, bridge_pin, session)
@@ -630,7 +630,7 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
         self._initialized = True
         return self._devices
 
-    async def vedo_enabled(self, vedo_pin: int) -> bool:
+    async def vedo_enabled(self, vedo_pin: str) -> bool:
         """Check if Serial bridge has VEDO alarm feature."""
         payload = {"alm": vedo_pin}
         try:
