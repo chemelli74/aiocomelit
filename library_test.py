@@ -178,9 +178,8 @@ async def bridge_test(session: ClientSession, args: Namespace) -> bool:
                 break
         print("-" * 20)
 
-    vedo_enabled: bool = (
-        await bridge_api.vedo_enabled(args.vedo_pin or args.bridge_pin)
-        and args.bridge_vedo
+    vedo_enabled: bool = args.bridge_vedo and await bridge_api.vedo_enabled(
+        args.vedo_pin or args.bridge_pin
     )
 
     if vedo_enabled:
@@ -244,7 +243,7 @@ async def vedo_test(
 
 async def main() -> None:
     """Run main."""
-    parser, args = get_arguments()
+    _, args = get_arguments()
 
     print("-" * 20)
     print(f"aiocomelit version: {__version__}")
@@ -263,9 +262,8 @@ async def main() -> None:
         # VEDO system mandatorily requires a pin for direct access
         if not args.vedo_pin:
             print(f"{VEDO}: Missing PIN. Skipping tests")
-            parser.print_help()
-            return
-        await vedo_test(session, args, None)
+        else:
+            await vedo_test(session, args, None)
 
     print("Closing HTTP ClientSession")
     await session.close()
