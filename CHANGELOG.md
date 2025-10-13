@@ -1,5 +1,28 @@
 # Changelog
 
+## v1.1.2 (2025-10-13)
+
+### Bug fixes
+
+- Revert strict login check ([`bf5cd1d`](https://github.com/chemelli74/aiocomelit/commit/bf5cd1d83c970c4cd6f6a6ea5de5df329c38c9bf))
+
+
+### Testing
+
+- Improving library_test.py script ([`580e615`](https://github.com/chemelli74/aiocomelit/commit/580e61596389da2a8fbc7aae61c6afac63f6b3cd))
+
+
+### Refactoring
+
+- File format ([`c3045ad`](https://github.com/chemelli74/aiocomelit/commit/c3045ad9e4fae385fa09351409f6e34b42f1f895))
+
+
+### Build system
+
+- Fix semantic-release verbosity ([`4bd6f58`](https://github.com/chemelli74/aiocomelit/commit/4bd6f589f5f71646ff399cb9049d0045619cd18c))
+- Update syntax for semantic-release v10 ([`069b064`](https://github.com/chemelli74/aiocomelit/commit/069b0643a3daf9712d6798bdff56b1fc42eb0791))
+
+
 ## v1.1.1 (2025-10-06)
 
 ### Bug fixes
