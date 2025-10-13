@@ -210,7 +210,7 @@ class ComelitCommonApi:
         cookies = await self._post_page_result("/login.cgi", payload)
         _LOGGER.debug("[%s] Cookies: %s", self._logging, cookies)
 
-        if not cookies or not await self._check_logged_in(host_type):
+        if not cookies:
             _LOGGER.warning(
                 "[%s] Authentication failed: no cookies received", self._logging
             )
