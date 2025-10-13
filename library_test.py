@@ -260,10 +260,10 @@ async def main() -> None:
     # VEDO is not accessible via Serial bridge, need direct access
     if not bridge_vedo_enabled:
         # VEDO system mandatorily requires a pin for direct access
-        if args.vedo_pin:
+        if not args.vedo_pin:
+            print(f"{VEDO}: Missing PIN. Skipping tests")
+        else:
             await vedo_test(session, args, None)
-
-        print(f"{VEDO}: Missing PIN. Skipping tests")
 
     print("Closing HTTP ClientSession")
     await session.close()
