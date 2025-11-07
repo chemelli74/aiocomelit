@@ -20,6 +20,7 @@ IRRIGATION = "irrigation"
 LIGHT = "light"
 OTHER = "other"
 SCENARIO = "scenario"
+ALARM = "alarm"
 
 # Statuses
 STATE_COVER: list[str] = ["stopped", "opening", "closing"]

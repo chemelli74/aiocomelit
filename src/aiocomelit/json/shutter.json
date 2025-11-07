@@ -1,0 +1,24 @@
+{
+  "num": 2,
+  "desc": ["Tenda esterna", "Velux"],
+  "env": [1, 12],
+  "status": [0, 0],
+  "val": [0, 0],
+  "type": [4, 4],
+  "protected": [0, 0],
+  "env_desc": [
+    "",
+    "SALA",
+    "Cucina",
+    "Bagno Piano Terra",
+    "GARAGE",
+    "LUOGO PASSAGGIO",
+    "AUTOMAZIONI",
+    "Irrigazione",
+    "Camera Matrimoniale",
+    "Stanza stiro",
+    "Camera Daniel",
+    "Camera Jacopo",
+    "Bagno Primo Piano"
+  ]
+}

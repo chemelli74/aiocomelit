@@ -13,8 +13,11 @@ import pint
 from aiohttp import ClientConnectorError, ClientSession
 from yarl import URL
 
+from aiocomelit.fixtures import load_fixture
+
 from .const import (
     _LOGGER,
+    ALARM,
     ALARM_AREA_STATUS,
     ALARM_ZONE_STATUS,
     BRIDGE,
@@ -343,6 +346,7 @@ class ComelitCommonApi:
             "AREA statistics",
             f"/user/{self._vedo_url_suffix}area_stat.json",
         )
+        reply_json_area_stat = await load_fixture("ices_eyes/vedo_area_stat")
         description = {"description": area.name, "p1_pres": area.p1, "p2_pres": area.p2}
 
         return await self._create_area_object(
@@ -353,7 +357,7 @@ class ComelitCommonApi:
 
     async def get_all_areas_and_zones(
         self,
-    ) -> AlarmDataObject:
+    ) -> dict[str, AlarmDataObject]:
         """Get all VEDO system AREA and ZONE."""
         queries: dict[int, dict[str, Any]] = {
             1: {
@@ -388,10 +392,9 @@ class ComelitCommonApi:
                 )
                 continue
             await self._sleep_between_call(SLEEP_BETWEEN_VEDO_CALLS)
-            reply_status, reply_json = await self._async_get_page_data(
-                desc,
-                page,
-                present,
+            reply_status = 1
+            reply_json = await load_fixture(
+                f"ices_eyes/{page.removeprefix('/user/').removesuffix('.json')}"
             )
             if not reply_status:
                 _LOGGER.debug(
@@ -443,7 +446,7 @@ class ComelitCommonApi:
             )
             zones.update({i: zone})
 
-        return AlarmDataObject(alarm_areas=areas, alarm_zones=zones)
+        return {ALARM: AlarmDataObject(alarm_areas=areas, alarm_zones=zones)}
 
 
 class ComeliteSerialBridgeApi(ComelitCommonApi):
@@ -571,6 +574,9 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
             _, reply_json = await self._get_page_result(
                 f"/user/icon_desc.json?type={dev_type}",
             )
+
+            reply_json = await load_fixture(dev_type)
+
             _LOGGER.debug(
                 "[%s] List of devices of type %s: %s",
                 self._logging,
@@ -583,6 +589,9 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
                 _, reply_counter_json = await self._get_page_result(
                     "/user/counter.json",
                 )
+
+                reply_counter_json = await load_fixture("counter")
+
             devices: dict[int, ComelitSerialBridgeObject] = {}
             desc = reply_json["desc"]
             # Guard against some old bridges: sporadically return no data

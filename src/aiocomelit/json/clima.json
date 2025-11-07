@@ -1,0 +1,45 @@
+{
+  "num": 4,
+  "desc": ["SALA", "BAGNO PT", "REP NOTTE", "BAGNO P1"],
+  "env": [0, 0, 0, 0],
+  "status": [1, 0, 1, 0],
+  "val": [
+    [
+      [227, 1, "L", "M", 220, 0, 0, "B"],
+      [0, 0, "O", "A", 0, 0, 0, "N"],
+      [0, 0]
+    ],
+    [
+      [232, 0, "O", "M", 50, 0, 0, "B"],
+      [0, 0, "O", "A", 0, 0, 0, "N"],
+      [0, 0]
+    ],
+    [
+      [232, 1, "L", "M", 220, 0, 0, "B"],
+      [0, 0, "O", "A", 0, 0, 0, "N"],
+      [0, 0]
+    ],
+    [
+      [236, 0, "O", "M", 50, 0, 0, "B"],
+      [0, 0, "O", "A", 0, 0, 0, "N"],
+      [0, 0]
+    ]
+  ],
+  "type": [5, 5, 5, 5],
+  "protected": [0, 0, 0, 0],
+  "env_desc": [
+    "",
+    "SALA",
+    "Cucina",
+    "Bagno Piano Terra",
+    "GARAGE",
+    "LUOGO PASSAGGIO",
+    "AUTOMAZIONI",
+    "Irrigazione",
+    "Camera Matrimoniale",
+    "Stanza stiro",
+    "Camera Daniel",
+    "Camera Jacopo",
+    "Bagno Primo Piano"
+  ]
+}

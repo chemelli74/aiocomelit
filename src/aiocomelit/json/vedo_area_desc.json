@@ -1,0 +1,19 @@
+{
+  "logged": 1,
+  "rt_stat": 9,
+  "vedo_auth": [0, 1],
+  "life": 1,
+  "present": [1, 1, 1, 1, 0, 0, 0, 0],
+  "description": [
+    "Perimetrale",
+    "Volumetrico PP",
+    "Vol. Garage",
+    "Volumetrico PT",
+    "",
+    "",
+    "",
+    ""
+  ],
+  "p1_pres": [0, 0, 0, 0, 0, 0, 0, 0],
+  "p2_pres": [0, 0, 0, 0, 0, 0, 0, 0]
+}

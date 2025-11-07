@@ -1,0 +1,29 @@
+{
+  "num": 4,
+  "desc": [
+    "IRRIGAZIONE ZONA 1",
+    "IRRIGAZIONE ZONA 2",
+    "IRRIGAZIONE ZONA 3",
+    "IRRIGAZIONE ZONA 4"
+  ],
+  "env": [0, 0, 0, 0],
+  "status": [0, 0, 0, 0],
+  "val": [0, 0, 0, 0],
+  "type": [0, 0, 0, 0],
+  "protected": [0, 0, 0, 0],
+  "env_desc": [
+    "",
+    "SALA",
+    "Cucina",
+    "Bagno Piano Terra",
+    "GARAGE",
+    "LUOGO PASSAGGIO",
+    "AUTOMAZIONI",
+    "Irrigazione",
+    "Camera Matrimoniale",
+    "Stanza stiro",
+    "Camera Daniel",
+    "Camera Jacopo",
+    "Bagno Primo Piano"
+  ]
+}
