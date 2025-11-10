@@ -19,7 +19,9 @@ from aiocomelit.api import (
     ComelitVedoAreaObject,
 )
 from aiocomelit.const import (
+    ALARM_AREA,
     ALARM_ENABLE,
+    ALARM_ZONE,
     BRIDGE,
     COVER,
     IRRIGATION,
@@ -227,15 +229,16 @@ async def vedo_test(
         await session.close()
         sys.exit(2)
     print(f"[{api_logging}] AREAS:")
-    for area in alarm_data["alarm_areas"]:
-        print(alarm_data["alarm_areas"][area])
+    for area in alarm_data[ALARM_AREA]:
+        print(alarm_data[ALARM_AREA][area])
     print("-" * 20)
     print(f"[{api_logging}] ZONES:")
-    for zone in alarm_data["alarm_zones"]:
-        print(alarm_data["alarm_zones"][zone])
+    for zone in alarm_data[ALARM_ZONE]:
+        print(alarm_data[ALARM_ZONE][zone])
     print("-" * 20)
-    if args.test:
-        await execute_alarm_test(api, alarm_data["alarm_areas"][INDEX], api_logging)
+    area_object = alarm_data[ALARM_AREA][INDEX]
+    if args.test and isinstance(area_object, ComelitVedoAreaObject):
+        await execute_alarm_test(api, area_object, api_logging)
         print("-" * 20)
     print(f"{api_logging} Logout")
     await api.logout()
