@@ -3,11 +3,12 @@
 import asyncio
 import functools
 from abc import abstractmethod
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from http import HTTPStatus
 from http.cookies import SimpleCookie
-from typing import Any, TypedDict, cast
+from typing import Any, cast
 
 import pint
 from aiohttp import ClientConnectorError, ClientSession
@@ -15,7 +16,9 @@ from yarl import URL
 
 from .const import (
     _LOGGER,
+    ALARM_AREA,
     ALARM_AREA_STATUS,
+    ALARM_ZONE,
     ALARM_ZONE_STATUS,
     BRIDGE,
     CLIMATE,
@@ -81,13 +84,6 @@ class ComelitVedoZoneObject:
     status_api: str
     status: int
     human_status: AlarmZoneState
-
-
-class AlarmDataObject(TypedDict):
-    """TypedDict for Alarm data objects."""
-
-    alarm_areas: dict[int, ComelitVedoAreaObject]
-    alarm_zones: dict[int, ComelitVedoZoneObject]
 
 
 class ComelitCommonApi:
@@ -353,7 +349,7 @@ class ComelitCommonApi:
 
     async def get_all_areas_and_zones(
         self,
-    ) -> AlarmDataObject:
+    ) -> dict[str, Mapping[int, ComelitVedoAreaObject | ComelitVedoZoneObject]]:
         """Get all VEDO system AREA and ZONE."""
         queries: dict[int, dict[str, Any]] = {
             1: {
@@ -443,7 +439,10 @@ class ComelitCommonApi:
             )
             zones.update({i: zone})
 
-        return AlarmDataObject(alarm_areas=areas, alarm_zones=zones)
+        return {
+            ALARM_AREA: areas,
+            ALARM_ZONE: zones,
+        }
 
 
 class ComeliteSerialBridgeApi(ComelitCommonApi):
@@ -634,7 +633,8 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
         """Check if Serial bridge has VEDO alarm feature."""
         payload = {"alm": vedo_pin}
         try:
-            await self._login(payload, VEDO)
+            if vedo_pin != self.device_pin:
+                await self._login(payload, VEDO)
             await self._get_page_result(f"/user/{self._vedo_url_suffix}area_desc.json")
         except (CannotAuthenticate, CannotRetrieveData):
             return False
