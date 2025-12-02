@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.0.0 (2025-12-02)
+
+### Refactoring
+
+- Align alarm data structure ([`17572b6`](https://github.com/chemelli74/aiocomelit/commit/17572b6d55a15f691f06373125cf0f2a42c58e06))
+
+
 ## v1.1.2 (2025-10-13)
 
 ### Bug fixes
