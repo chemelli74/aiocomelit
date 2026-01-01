@@ -1,0 +1,72 @@
+{
+  "num": 32,
+  "desc": [
+    "Uscita 7",
+    "PRESA SOTTO SCALA",
+    "SOFFITTO SALA EST",
+    "SOFFITTO SALA OVEST",
+    "CAMINETTO",
+    "SGABUZZINO",
+    "LUCE SECONDARIA",
+    "LED TELEVISORE",
+    "Luce Cucina",
+    "Sensore pioggia",
+    "Luce Bagno PT",
+    "Specchio Bagno PT",
+    "FUORI GARAGE",
+    "GARAGE",
+    "LAVANDERIA",
+    "SOFFITTO DISBRIGO",
+    "PARETE DISBRIGO",
+    "SCALA",
+    "LUCI ESTERNE",
+    "COMANDO CANCELLO",
+    "POMPA FOGNATURA",
+    "COMANDO BASCULANTE",
+    "STATO ALLARME",
+    "Luce Camera Matrimon",
+    "Luce Sopra Armadio",
+    "LUCE PARETE",
+    "Luce Camera Daniel",
+    "Luce Camera Jacopo",
+    "Luce Secondaria Jaco",
+    "Luce Bagno P1",
+    "Specchio Bagno P1",
+    "Luce Sottotetto"
+  ],
+  "env": [
+    1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 6, 6, 8, 8,
+    9, 10, 11, 11, 12, 12, 12
+  ],
+  "status": [
+    0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 1, 0, 0, 0
+  ],
+  "val": [
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0
+  ],
+  "type": [
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0
+  ],
+  "protected": [
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0
+  ],
+  "env_desc": [
+    "",
+    "SALA",
+    "Cucina",
+    "Bagno Piano Terra",
+    "GARAGE",
+    "LUOGO PASSAGGIO",
+    "AUTOMAZIONI",
+    "Irrigazione",
+    "Camera Matrimoniale",
+    "Stanza stiro",
+    "Camera Daniel",
+    "Camera Jacopo",
+    "Bagno Primo Piano"
+  ]
+}
