@@ -14,6 +14,8 @@ import pint
 from aiohttp import ClientConnectorError, ClientSession
 from yarl import URL
 
+from aiocomelit.fixtures import ENABLE_FIXTURES, load_fixture
+
 from .const import (
     _LOGGER,
     ALARM_AREA,
@@ -339,6 +341,10 @@ class ComelitCommonApi:
             "AREA statistics",
             f"/user/{self._vedo_url_suffix}area_stat.json",
         )
+        if ENABLE_FIXTURES:
+            reply_json_area_stat = await load_fixture(
+                f"vedo/{self._vedo_url_suffix}area_stat"
+            )
         description = {"description": area.name, "p1_pres": area.p1, "p2_pres": area.p2}
 
         return await self._create_area_object(
@@ -384,11 +390,17 @@ class ComelitCommonApi:
                 )
                 continue
             await self._sleep_between_call(SLEEP_BETWEEN_VEDO_CALLS)
-            reply_status, reply_json = await self._async_get_page_data(
-                desc,
-                page,
-                present,
-            )
+            if not ENABLE_FIXTURES:
+                reply_status, reply_json = await self._async_get_page_data(
+                    desc,
+                    page,
+                    present,
+                )
+            else:
+                reply_status = True
+                reply_json = await load_fixture(
+                    f"vedo/{page.removeprefix('/user/').removesuffix('.json')}"
+                )
             if not reply_status:
                 _LOGGER.debug(
                     "[%s] Login expired accessing %s, re-login attempt",
@@ -570,6 +582,10 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
             _, reply_json = await self._get_page_result(
                 f"/user/icon_desc.json?type={dev_type}",
             )
+
+            if ENABLE_FIXTURES:
+                reply_json = await load_fixture(f"bridge/{dev_type}")
+
             _LOGGER.debug(
                 "[%s] List of devices of type %s: %s",
                 self._logging,
@@ -582,6 +598,9 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
                 _, reply_counter_json = await self._get_page_result(
                     "/user/counter.json",
                 )
+                if ENABLE_FIXTURES:
+                    reply_counter_json = await load_fixture("bridge/counter")
+
             devices: dict[int, ComelitSerialBridgeObject] = {}
             desc = reply_json["desc"]
             # Guard against some old bridges: sporadically return no data
