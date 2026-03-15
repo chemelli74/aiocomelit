@@ -1,5 +1,22 @@
 # Changelog
 
+## v2.0.1 (2026-03-15)
+
+### Bug fixes
+
+- Alarm set for serial bridge ([`5cf957b`](https://github.com/chemelli74/aiocomelit/commit/5cf957b9972b0ca292c0f637f8442fe1fa9b858a))
+
+
+### Build system
+
+- Improve and cleanup ([`a9b824b`](https://github.com/chemelli74/aiocomelit/commit/a9b824b0906beaf23a2a662c073b33b4955c9e18))
+
+
+### Testing
+
+- Save fixtures ([`f9d2da5`](https://github.com/chemelli74/aiocomelit/commit/f9d2da5f5198d0689a5aaa98948eebdd7cd6d42c))
+
+
 ## v2.0.0 (2025-12-02)
 
 ### Refactoring
