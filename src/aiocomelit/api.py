@@ -325,7 +325,7 @@ class ComelitCommonApi:
 
         """
         reply_status, _ = await self._get_page_result(
-            f"{self._vedo_url_action}{action}={index}&force={int(force)}",
+            f"{self._vedo_url_action}?vedo=1&{action}={index}&force={int(force)}",
             False,
         )
         return reply_status == HTTPStatus.OK
@@ -449,7 +449,7 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
     """Queries Comelit SimpleHome Serial bridge."""
 
     _vedo_url_suffix: str = "vedo_"
-    _vedo_url_action: str = "/user/action.cgi?"
+    _vedo_url_action: str = "/user/action.cgi"
     _host_type = BRIDGE
 
     def __init__(
@@ -646,7 +646,7 @@ class ComelitVedoApi(ComelitCommonApi):
     """Queries Comelit SimpleHome VEDO alarm."""
 
     _vedo_url_suffix: str = ""
-    _vedo_url_action: str = "/action.cgi?vedo=1&"
+    _vedo_url_action: str = "/action.cgi"
     _host_type = VEDO
 
     async def login(self) -> bool:
