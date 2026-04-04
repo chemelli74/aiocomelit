@@ -23,7 +23,9 @@
   <a href="https://pypi.org/project/aiocomelit/">
     <img src="https://img.shields.io/pypi/v/aiocomelit.svg?logo=python&logoColor=fff&style=flat-square" alt="PyPI Version">
   </a>
-  <img src="https://img.shields.io/pypi/pyversions/aiocomelit.svg?style=flat-square&logo=python&logoColor=fff" alt="Supported Python versions">
+  <a href="https://pypi.org/project/aiocomelit/">
+    <img src="https://img.shields.io/pypi/pyversions/aiocomelit?style=flat-square&amp;logo=python&amp;logoColor=fff" alt="Supported Python versions">
+  </a>
   <img src="https://img.shields.io/pypi/l/aiocomelit.svg?style=flat-square" alt="License">
 </p>
 
