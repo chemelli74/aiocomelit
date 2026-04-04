@@ -64,7 +64,6 @@ ALARM_ENABLE = "tot"
 ALARM_AREA_STATUS: dict[str, AlarmAreaState] = {
     "out_time": AlarmAreaState.EXIT_DELAY,
     "in_time": AlarmAreaState.ENTRY_DELAY,
-    "anomaly": AlarmAreaState.ANOMALY,
     "sabotage": AlarmAreaState.SABOTAGE,
     "alarm": AlarmAreaState.TRIGGERED,
     "armed": AlarmAreaState.ARMED,
