@@ -1,5 +1,23 @@
 # Changelog
 
+## v2.0.2 (2026-04-04)
+
+### Bug fixes
+
+- Pipx not available in the python-semantic-release runner ([`6c19a4f`](https://github.com/chemelli74/aiocomelit/commit/6c19a4fec5ad5c53049d2c18c86b77d80213cccb))
+- Allow overwriting of the anomaly state ([`fcf8eaa`](https://github.com/chemelli74/aiocomelit/commit/fcf8eaa675fb5fa141d1613c0c309f5cd415d0d0))
+
+
+### Build system
+
+- Modernize development environment ([`e1b7e15`](https://github.com/chemelli74/aiocomelit/commit/e1b7e15efd00ebca2b91d2b102a2f02bbcf339fc))
+
+
+### Testing
+
+- Move fixture to tests ([`2154bcd`](https://github.com/chemelli74/aiocomelit/commit/2154bcdf78c465aef91ff754338661380eadc7f7))
+
+
 ## v2.0.1 (2026-03-15)
 
 ### Bug fixes
