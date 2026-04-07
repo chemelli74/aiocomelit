@@ -1,5 +1,9 @@
 {
   "extends": ["github>browniebroke/renovate-configs:python"],
+  "dependencyDashboardApproval": false,
+  "prHourlyLimit": 0,
+  "prConcurrentLimit": 0,
+  "branchConcurrentLimit": 0,
   "customManagers": [
     {
       "customType": "regex",
@@ -15,7 +19,7 @@
       "customType": "regex",
       "fileMatch": ["(^|/)pyproject\\.toml$"],
       "matchStrings": [
-        "build_command\\s*=\\s*\"pipx install \\\"uv==(?<currentValue>[^\"]+)\\\" && uv build\""
+        "build_command\\s*=\\s*\"python -m pip install \\\"uv==(?<currentValue>[^\"]+)\\\" && uv build\""
       ],
       "depNameTemplate": "uv",
       "datasourceTemplate": "pypi"
