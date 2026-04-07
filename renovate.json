@@ -37,6 +37,16 @@
     },
     {
       "customType": "regex",
+      "fileMatch": ["(^|/)\\.devcontainer/devcontainer\\.json$"],
+      "matchStrings": [
+        "\"image\":\\s*\"mcr\\.microsoft\\.com/devcontainers/python:(?<prefix>[^-]+)-(?<currentValue>[^\"]+)\""
+      ],
+      "depNameTemplate": "python",
+      "datasourceTemplate": "python-version",
+      "autoReplaceStringTemplate": "\"image\": \"mcr.microsoft.com/devcontainers/python:1-{{{newValue}}}\""
+    },
+    {
+      "customType": "regex",
       "fileMatch": ["(^|/)pyproject\\.toml$"],
       "matchStrings": [
         "\"Programming Language :: Python :: (?<currentValue>[^\"]+)\",\\s*#\\s+renovate:\\s+depName=python\\s+datasource=python-version"
