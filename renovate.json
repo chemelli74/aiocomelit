@@ -19,11 +19,31 @@
       "customType": "regex",
       "fileMatch": ["(^|/)\\.github/workflows/ci\\.yml$"],
       "matchStrings": [
-        "(?<indentation>\\s*)-\\s*\"(?<currentValue>[^\"]+)\"\\s+#\\s+renovate:\\s+depName=python\\s+datasource=python-version"
+        "(?<indentation>[ \\t]*)-\\s*\"(?<currentValue>[^\"]+)\"\\s+#\\s+renovate:\\s+depName=python\\s+datasource=python-version"
       ],
       "depNameTemplate": "python",
       "datasourceTemplate": "python-version",
-      "autoReplaceStringTemplate": "{{{indentation}}}- \"{{{currentValue}}}\"\n{{{indentation}}}- \"{{{newValue}}}\" # renovate: depName=python datasource=python-version"
+      "autoReplaceStringTemplate": "{{{indentation}}}- \"{{{newValue}}}\" # renovate: depName=python datasource=python-version"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["(^|/)\\.github/workflows/ci\\.yml$"],
+      "matchStrings": [
+        "(?<indentation>[ \\t]*)python-version:\\s*\"(?<currentValue>[^\"]+)\"\\s+#\\s+renovate:\\s+depName=python\\s+datasource=python-version"
+      ],
+      "depNameTemplate": "python",
+      "datasourceTemplate": "python-version",
+      "autoReplaceStringTemplate": "{{{indentation}}}python-version: \"{{{newValue}}}\" # renovate: depName=python datasource=python-version"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["(^|/)pyproject\\.toml$"],
+      "matchStrings": [
+        "\"Programming Language :: Python :: (?<currentValue>[^\"]+)\",\\s*#\\s+renovate:\\s+depName=python\\s+datasource=python-version"
+      ],
+      "depNameTemplate": "python",
+      "datasourceTemplate": "python-version",
+      "autoReplaceStringTemplate": "\"Programming Language :: Python :: {{{newValue}}}\", # renovate: depName=python datasource=python-version"
     },
     {
       "customType": "regex",
