@@ -17,3 +17,7 @@ class CannotAuthenticate(ComelitError):
 
 class CannotRetrieveData(ComelitError):
     """Exception raised when data retrieval fails."""
+
+
+class DeviceStorageFailureError(ComelitError):
+    """Exception raised when device SD storage is failing or becoming unreliable."""

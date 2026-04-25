@@ -10,6 +10,7 @@ from http import HTTPStatus
 from http.cookies import SimpleCookie
 from typing import Any, cast
 
+import orjson
 import pint
 from aiohttp import ClientConnectorError, ClientSession
 from yarl import URL
@@ -37,7 +38,12 @@ from .const import (
     AlarmAreaState,
     AlarmZoneState,
 )
-from .exceptions import CannotAuthenticate, CannotConnect, CannotRetrieveData
+from .exceptions import (
+    CannotAuthenticate,
+    CannotConnect,
+    CannotRetrieveData,
+    DeviceStorageFailureError,
+)
 
 
 @dataclass
@@ -141,7 +147,12 @@ class ComelitCommonApi:
             _LOGGER.debug("[%s] GET response is empty", self._logging)
             return response.status, {}
 
-        return response.status, await response.json()
+        try:
+            json_data = await response.json(loads=orjson.loads)
+        except orjson.JSONDecodeError as exc:
+            raise DeviceStorageFailureError("Error parsing JSON response") from exc
+
+        return response.status, json_data
 
     async def _post_page_result(
         self,
@@ -576,6 +587,11 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
                 dev_type,
                 reply_json,
             )
+            if not reply_json:
+                raise DeviceStorageFailureError(
+                    f"No data received for device type {dev_type}"
+                )
+
             reply_counter_json: dict[str, Any] = {}
             num_devices = reply_json["num"]
             if dev_type == OTHER and num_devices > 0:
