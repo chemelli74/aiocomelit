@@ -12,7 +12,7 @@ from typing import Any, cast
 
 import orjson
 import pint
-from aiohttp import ClientConnectorError, ClientSession
+from aiohttp import ClientConnectorError, ClientSession, ContentTypeError
 from yarl import URL
 
 from .const import (
@@ -149,7 +149,7 @@ class ComelitCommonApi:
 
         try:
             json_data = await response.json(loads=orjson.loads)
-        except orjson.JSONDecodeError as exc:
+        except (orjson.JSONDecodeError, ContentTypeError) as exc:
             raise DeviceStorageFailureError("Error parsing JSON response") from exc
 
         return response.status, json_data
