@@ -14,6 +14,7 @@ from .exceptions import (
     CannotConnect,
     CannotRetrieveData,
     ComelitError,
+    DeviceStorageFailureError,
 )
 
 __all__ = [
@@ -26,4 +27,5 @@ __all__ = [
     "ComelitVedoAreaObject",
     "ComelitVedoZoneObject",
     "ComeliteSerialBridgeApi",
+    "DeviceStorageFailureError",
 ]
