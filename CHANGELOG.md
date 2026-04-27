@@ -1,5 +1,21 @@
 # Changelog
 
+## v2.0.3 (2026-04-27)
+
+### Bug fixes
+
+- Manages sd card breakage ([`9d862d3`](https://github.com/chemelli74/aiocomelit/commit/9d862d3d618cd093a63db7831ca980c84eadac32))
+
+
+### Build system
+
+- Fix uv upgrade ([`5596707`](https://github.com/chemelli74/aiocomelit/commit/5596707fa555eaed1ef0ba7c45eb1c66a821fcfa))
+- Auto-update uv.lock ([`3a2c032`](https://github.com/chemelli74/aiocomelit/commit/3a2c03295255591a294ead4ed71fc611f3ead4fd))
+- Allow uv updated in pyproject.toml ([`58bf395`](https://github.com/chemelli74/aiocomelit/commit/58bf395467cb91e89c78411587c2bd19486cbd52))
+- Make ci more deterministic ([`994ab46`](https://github.com/chemelli74/aiocomelit/commit/994ab46ec35bf903b6e06234d29f341b3b5e043e))
+- Fix renovate syntax ([`e655889`](https://github.com/chemelli74/aiocomelit/commit/e655889dc366eb2ecfbdad768c4827cdddfd4ba3))
+
+
 ## v2.0.2 (2026-04-04)
 
 ### Bug fixes
