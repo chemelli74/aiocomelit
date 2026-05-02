@@ -16,12 +16,12 @@ from tests.conftest import set_private_attr, set_private_mapping_item, setup_api
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from tests.conftest import MockSession
+    from aiohttp import ClientSession
 
 AREA_COUNT = 4
 
 
-async def test_vedo_login_delegates_to_common(mock_session: MockSession) -> None:
+async def test_vedo_login_delegates_to_common(mock_session: ClientSession) -> None:
     """Test VEDO login delegates to common login helper."""
     api = setup_api(ComelitVedoApi, "127.0.0.1", 80, "9999", mock_session)
     login_mock = AsyncMock(return_value=True)
@@ -31,7 +31,7 @@ async def test_vedo_login_delegates_to_common(mock_session: MockSession) -> None
     login_mock.assert_awaited_once_with({"code": "9999"}, VEDO)
 
 
-async def test_set_zone_status_success_and_failure(mock_session: MockSession) -> None:
+async def test_set_zone_status_success_and_failure(mock_session: ClientSession) -> None:
     """Test set_zone_status URL generation and status handling."""
     api = setup_api(ComelitVedoApi, "127.0.0.1", 80, "9999", mock_session)
     get_mock = AsyncMock(return_value=(HTTPStatus.OK, {}))
@@ -53,7 +53,7 @@ async def test_set_zone_status_success_and_failure(mock_session: MockSession) ->
 
 
 async def test_get_area_status(
-    mock_session: MockSession,
+    mock_session: ClientSession,
     fixture_loader: Callable[[str], dict[str, object]],
 ) -> None:
     """Test translating area status payload into area object."""
@@ -89,7 +89,7 @@ async def test_get_area_status(
 
 
 async def test_get_all_areas_and_zones_success(
-    mock_session: MockSession,
+    mock_session: ClientSession,
     fixture_loader: Callable[[str], dict[str, object]],
 ) -> None:
     """Test full successful fetch of area and zone data."""
@@ -112,7 +112,7 @@ async def test_get_all_areas_and_zones_success(
 
 
 async def test_get_all_areas_and_zones_cache_for_desc_pages(
-    mock_session: MockSession,
+    mock_session: ClientSession,
     fixture_loader: Callable[[str], dict[str, object]],
 ) -> None:
     """Test cached description pages are reused while stats are refreshed."""
@@ -146,7 +146,7 @@ async def test_get_all_areas_and_zones_cache_for_desc_pages(
 
 @pytest.mark.parametrize("retry_succeeds", [True, False])
 async def test_get_all_areas_and_zones_login_retry(
-    mock_session: MockSession,
+    mock_session: ClientSession,
     fixture_loader: Callable[[str], dict[str, object]],
     retry_succeeds: bool,
 ) -> None:

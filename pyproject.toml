@@ -33,6 +33,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "aioresponses",
     "colorlog",
     "pytest>=9.0,<10",
     "pytest-anyio",

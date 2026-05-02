@@ -21,12 +21,12 @@ from tests.conftest import call_private_async, set_private_attr, setup_api
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
-    from tests.conftest import MockSession
+    from aiohttp import ClientSession
 
 SCENARIO_COUNT = 3
 
 
-async def test_bridge_login_delegates_to_common(mock_session: MockSession) -> None:
+async def test_bridge_login_delegates_to_common(mock_session: ClientSession) -> None:
     """Test bridge login delegates to common internal login."""
     api = setup_api(ComeliteSerialBridgeApi, "127.0.0.1", 80, "1234", mock_session)
     login_mock = AsyncMock(return_value=True)
@@ -47,7 +47,7 @@ async def test_bridge_login_delegates_to_common(mock_session: MockSession) -> No
     ],
 )
 async def test_translate_device_status(
-    mock_session: MockSession,
+    mock_session: ClientSession,
     dev_type: str,
     status: int,
     expected: str,
@@ -61,7 +61,7 @@ async def test_translate_device_status(
 
 
 async def test_set_thermo_humi_status_waits_and_scales(
-    mock_session: MockSession,
+    mock_session: ClientSession,
 ) -> None:
     """Test thermo/humidity helper queueing and value scaling."""
     api = setup_api(ComeliteSerialBridgeApi, "127.0.0.1", 80, "1234", mock_session)
@@ -82,7 +82,7 @@ async def test_set_thermo_humi_status_waits_and_scales(
     assert "val=225" in called_url
 
 
-async def test_set_clima_and_humidity_wrappers(mock_session: MockSession) -> None:
+async def test_set_clima_and_humidity_wrappers(mock_session: ClientSession) -> None:
     """Test climate/humidity wrapper methods delegate correctly."""
     api = setup_api(ComeliteSerialBridgeApi, "127.0.0.1", 80, "1234", mock_session)
     thermo_humi_mock = AsyncMock(return_value=True)
@@ -103,7 +103,7 @@ async def test_set_clima_and_humidity_wrappers(mock_session: MockSession) -> Non
     ],
 )
 async def test_set_device_status(
-    mock_session: MockSession,
+    mock_session: ClientSession,
     action: int,
     expected_fragment: str,
     status_code: HTTPStatus,
@@ -120,7 +120,7 @@ async def test_set_device_status(
     assert expected_fragment in call_args.args[0]
 
 
-async def test_get_device_status(mock_session: MockSession) -> None:
+async def test_get_device_status(mock_session: ClientSession) -> None:
     """Test reading a single device status index."""
     api = setup_api(ComeliteSerialBridgeApi, "127.0.0.1", 80, "1234", mock_session)
     set_private_attr(
@@ -140,7 +140,7 @@ async def test_get_device_status(mock_session: MockSession) -> None:
     ],
 )
 async def test_get_all_devices_with_real_fixtures(
-    mock_session: MockSession,
+    mock_session: ClientSession,
     fixture_loader: Callable[[str], dict[str, object]],
     counter_payload: dict[str, object],
     expected_power: float,
@@ -178,7 +178,7 @@ async def test_get_all_devices_with_real_fixtures(
 
 
 async def test_get_all_devices_empty_payload_raises_storage_error(
-    mock_session: MockSession,
+    mock_session: ClientSession,
 ) -> None:
     """Test empty payload handling while loading all devices."""
     api = setup_api(ComeliteSerialBridgeApi, "127.0.0.1", 80, "1234", mock_session)
@@ -191,7 +191,7 @@ async def test_get_all_devices_empty_payload_raises_storage_error(
 
 
 async def test_get_all_devices_empty_desc_raises_when_not_initialized(
-    mock_session: MockSession,
+    mock_session: ClientSession,
 ) -> None:
     """Test empty climate descriptions raise when bridge is not initialized."""
     api = setup_api(ComeliteSerialBridgeApi, "127.0.0.1", 80, "1234", mock_session)
@@ -228,7 +228,7 @@ async def test_get_all_devices_empty_desc_raises_when_not_initialized(
 
 
 async def test_get_all_devices_empty_desc_skips_climate_when_initialized(
-    mock_session: MockSession,
+    mock_session: ClientSession,
 ) -> None:
     """Test empty climate descriptions are skipped once bridge is initialized."""
     api = setup_api(ComeliteSerialBridgeApi, "127.0.0.1", 80, "1234", mock_session)
@@ -274,7 +274,7 @@ async def test_get_all_devices_empty_desc_skips_climate_when_initialized(
     ],
 )
 async def test_vedo_enabled_paths(
-    mock_session: MockSession,
+    mock_session: ClientSession,
     vedo_pin: str,
     login_side_effect: Exception | None,
     get_side_effect: tuple[int, dict[str, object]] | Exception,

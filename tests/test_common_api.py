@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
+import re
 from http import HTTPStatus
 from http.cookies import SimpleCookie
 from typing import TYPE_CHECKING, Any
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 
 import orjson
 import pytest
-from aiohttp import ContentTypeError, RequestInfo
+from aiohttp import ClientConnectorError, ContentTypeError, RequestInfo
 from multidict import CIMultiDict, CIMultiDictProxy
 from yarl import URL
 
@@ -27,9 +28,7 @@ from aiocomelit.exceptions import (
     DeviceStorageFailureError,
 )
 from tests.conftest import (
-    MockResponse,
     call_private_async,
-    connector_error,
     set_private_attr,
     setup_api,
 )
@@ -37,7 +36,8 @@ from tests.conftest import (
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
-    from tests.conftest import MockSession
+    from aiohttp import ClientSession
+    from aioresponses import aioresponses
 
     GetPageResultMethod = Callable[[str, bool], Awaitable[tuple[int, dict[str, Any]]]]
     PostPageResultMethod = Callable[[str, dict[str, Any]], Awaitable[SimpleCookie]]
@@ -58,78 +58,141 @@ if TYPE_CHECKING:
     ]
 
 
-async def test_get_page_result_success(mock_session: MockSession) -> None:
+async def test_get_page_result_success(
+    mock_session: ClientSession,
+    aiohttp_mock: aioresponses,
+) -> None:
     """Test successful GET with JSON parsing."""
     api = setup_api(ComeliteSerialBridgeApi, "127.0.0.1", 80, "1234", mock_session)
     get_page_result: GetPageResultMethod = call_private_async(api, "_get_page_result")
-    mock_session.queue_get(MockResponse(json_data={"ok": True}))
 
-    status, data = await get_page_result("/status.json", True)
+    with aiohttp_mock:
+        aiohttp_mock.get(
+            re.compile(r"http://127\.0\.0\.1(?::80)?/status\.json.*"),
+            payload={"ok": True},
+            status=HTTPStatus.OK,
+        )
 
-    assert status == HTTPStatus.OK
-    assert data == {"ok": True}
+        status, data = await get_page_result("/status.json", True)
+
+        assert status == HTTPStatus.OK
+        assert data == {"ok": True}
 
 
-async def test_get_page_result_no_json_reply(mock_session: MockSession) -> None:
+async def test_get_page_result_no_json_reply(
+    mock_session: ClientSession,
+    aiohttp_mock: aioresponses,
+) -> None:
     """Test GET path that skips JSON parsing."""
     api = setup_api(ComeliteSerialBridgeApi, "127.0.0.1", 80, "1234", mock_session)
     get_page_result: GetPageResultMethod = call_private_async(api, "_get_page_result")
-    mock_session.queue_get(MockResponse(json_data={"ignored": True}))
 
-    status, data = await get_page_result("/empty.json", False)
+    with aiohttp_mock:
+        aiohttp_mock.get(
+            re.compile(r"http://127\.0\.0\.1(?::80)?/empty\.json.*"),
+            payload={"ignored": True},
+            status=HTTPStatus.OK,
+        )
 
-    assert status == HTTPStatus.OK
-    assert data == {}
+        status, data = await get_page_result("/empty.json", False)
+
+        assert status == HTTPStatus.OK
+        assert data == {}
 
 
 @pytest.mark.parametrize(
-    ("queued_response", "expected_exception"),
+    ("exception_to_raise", "expected_exception"),
     [
         (TimeoutError(), CannotConnect),
-        (connector_error(), CannotConnect),
-        (
-            MockResponse(
-                status=HTTPStatus.INTERNAL_SERVER_ERROR, json_data={"error": True}
-            ),
+        (ClientConnectorError(None, OSError("boom")), CannotConnect),
+        pytest.param(
+            None,  # No exception, bad status code
             CannotRetrieveData,
-        ),
-        (
-            MockResponse(json_exc=orjson.JSONDecodeError("bad json", "{}", 0)),
-            DeviceStorageFailureError,
-        ),
-        (
-            MockResponse(
-                json_exc=ContentTypeError(
-                    request_info=RequestInfo(
-                        url=URL("http://127.0.0.1"),
-                        method="GET",
-                        headers=CIMultiDictProxy(CIMultiDict()),
-                        real_url=URL("http://127.0.0.1"),
-                    ),
-                    history=(),
-                    message="wrong type",
-                )
-            ),
-            DeviceStorageFailureError,
+            id="bad_status",
         ),
     ],
 )
 async def test_get_page_result_raises_on_connection_and_status_errors(
-    mock_session: MockSession,
-    queued_response: Exception | MockResponse,
+    mock_session: ClientSession,
+    aiohttp_mock: aioresponses,
+    exception_to_raise: Exception | None,
     expected_exception: type[Exception],
 ) -> None:
     """Test GET error handling for connection failures and non-200 statuses."""
     api = setup_api(ComeliteSerialBridgeApi, "127.0.0.1", 80, "1234", mock_session)
     get_page_result: GetPageResultMethod = call_private_async(api, "_get_page_result")
-    mock_session.queue_get(queued_response)
 
-    with pytest.raises(expected_exception):
+    with aiohttp_mock:
+        if exception_to_raise:
+            aiohttp_mock.get(
+                re.compile(r"http://127\.0\.0\.1(?::80)?/status\.json.*"),
+                exception=exception_to_raise,
+            )
+        else:
+            aiohttp_mock.get(
+                re.compile(r"http://127\.0\.0\.1(?::80)?/status\.json.*"),
+                status=HTTPStatus.INTERNAL_SERVER_ERROR,
+            )
+
+        with pytest.raises(expected_exception):
+            await get_page_result("/status.json", True)
+
+
+async def test_get_page_result_raises_on_json_parsing_errors(
+    mock_session: ClientSession,
+) -> None:
+    """Test GET error handling for JSON parsing failures."""
+    api = setup_api(ComeliteSerialBridgeApi, "127.0.0.1", 80, "1234", mock_session)
+    get_page_result: GetPageResultMethod = call_private_async(api, "_get_page_result")
+
+    # Test orjson parsing error
+    set_private_attr(
+        api,
+        "_session",
+        AsyncMock(
+            get=AsyncMock(
+                return_value=AsyncMock(
+                    status=HTTPStatus.OK,
+                    json=AsyncMock(
+                        side_effect=orjson.JSONDecodeError("bad json", "{}", 0)
+                    ),
+                )
+            )
+        ),
+    )
+    with pytest.raises(DeviceStorageFailureError):
+        await get_page_result("/status.json", True)
+
+    # Test ContentTypeError
+    set_private_attr(
+        api,
+        "_session",
+        AsyncMock(
+            get=AsyncMock(
+                return_value=AsyncMock(
+                    status=HTTPStatus.OK,
+                    json=AsyncMock(
+                        side_effect=ContentTypeError(
+                            request_info=RequestInfo(
+                                url=URL("http://127.0.0.1"),
+                                method="GET",
+                                headers=CIMultiDictProxy(CIMultiDict()),
+                                real_url=URL("http://127.0.0.1"),
+                            ),
+                            history=(),
+                            message="wrong type",
+                        )
+                    ),
+                )
+            )
+        ),
+    )
+    with pytest.raises(DeviceStorageFailureError):
         await get_page_result("/status.json", True)
 
 
 async def test_post_page_result_success_and_errors(
-    mock_session: MockSession,
+    mock_session: ClientSession,
 ) -> None:
     """Test POST happy-path and error handling."""
     api = setup_api(ComeliteSerialBridgeApi, "127.0.0.1", 80, "1234", mock_session)
@@ -137,26 +200,55 @@ async def test_post_page_result_success_and_errors(
         api, "_post_page_result"
     )
 
+    # Test successful POST with cookies
     cookies = SimpleCookie()
     cookies["sid"] = "abc"
-    mock_session.queue_post(MockResponse(status=HTTPStatus.OK, cookies=cookies))
+    mock_response = AsyncMock()
+    mock_response.status = HTTPStatus.OK
+    mock_response.cookies = cookies
+    set_private_attr(
+        api,
+        "_session",
+        AsyncMock(post=AsyncMock(return_value=mock_response)),
+    )
     result = await post_page_result("/login.cgi", {"dom": "1234"})
     assert "sid" in result
 
-    mock_session.queue_post(TimeoutError())
+    # Test POST with TimeoutError
+    set_private_attr(
+        api,
+        "_session",
+        AsyncMock(post=AsyncMock(side_effect=TimeoutError())),
+    )
     with pytest.raises(CannotConnect):
         await post_page_result("/login.cgi", {})
 
-    mock_session.queue_post(connector_error())
+    # Test POST with ClientConnectorError
+    set_private_attr(
+        api,
+        "_session",
+        AsyncMock(
+            post=AsyncMock(side_effect=ClientConnectorError(None, OSError("boom")))
+        ),
+    )
     with pytest.raises(CannotConnect):
         await post_page_result("/login.cgi", {})
 
-    mock_session.queue_post(MockResponse(status=HTTPStatus.FORBIDDEN))
+    # Test POST with bad status code
+    mock_response = AsyncMock()
+    mock_response.status = HTTPStatus.FORBIDDEN
+    set_private_attr(
+        api,
+        "_session",
+        AsyncMock(post=AsyncMock(return_value=mock_response)),
+    )
     with pytest.raises(CannotRetrieveData):
         await post_page_result("/login.cgi", {})
 
 
-async def test_session_state_and_logout(mock_session: MockSession) -> None:
+async def test_session_state_and_logout(
+    mock_session: ClientSession,
+) -> None:
     """Test session state and logout behavior."""
     api = setup_api(ComeliteSerialBridgeApi, "127.0.0.1", 80, "1234", mock_session)
     is_session_active: IsSessionActiveMethod = call_private_async(
@@ -165,15 +257,33 @@ async def test_session_state_and_logout(mock_session: MockSession) -> None:
 
     assert await is_session_active() is True
 
-    mock_session.queue_post(MockResponse(status=HTTPStatus.OK, cookies=SimpleCookie()))
+    # Mock the cookie jar for tracking clear() calls
+    mock_cookie_jar = Mock()
+    mock_cookie_jar.clear = Mock()
+    mock_response = AsyncMock()
+    mock_response.status = HTTPStatus.OK
+    mock_response.text = AsyncMock(return_value="")
+
+    mock_session_obj = AsyncMock(
+        post=AsyncMock(return_value=mock_response),
+        cookie_jar=mock_cookie_jar,
+        closed=False,
+    )
+    set_private_attr(api, "_session", mock_session_obj)
+
     await api.logout()
-    assert mock_session.cookie_jar.cleared is True
+    mock_cookie_jar.clear.assert_called_once()
 
-    mock_session.closed = True
+    # Test logout when session is already closed
+    set_private_attr(
+        api,
+        "_session",
+        AsyncMock(closed=True),
+    )
     await api.logout()
 
 
-async def test_check_logged_in_bridge_and_vedo(mock_session: MockSession) -> None:
+async def test_check_logged_in_bridge_and_vedo(mock_session: ClientSession) -> None:
     """Test login-state parsing for bridge and vedo."""
     api = setup_api(ComeliteSerialBridgeApi, "127.0.0.1", 80, "1234", mock_session)
     check_logged_in: CheckLoggedInMethod = call_private_async(api, "_check_logged_in")
@@ -193,7 +303,7 @@ async def test_check_logged_in_bridge_and_vedo(mock_session: MockSession) -> Non
     assert await check_logged_in(VEDO) is True
 
 
-async def test_sleep_between_call(mock_session: MockSession) -> None:
+async def test_sleep_between_call(mock_session: ClientSession) -> None:
     """Test sleep helper delegates to asyncio.sleep."""
     api = setup_api(ComeliteSerialBridgeApi, "127.0.0.1", 80, "1234", mock_session)
     sleep_between_call: SleepMethod = call_private_async(api, "_sleep_between_call")
@@ -204,7 +314,7 @@ async def test_sleep_between_call(mock_session: MockSession) -> None:
     sleep_mock.assert_awaited_once_with(0.01)
 
 
-async def test_login_happy_path_and_failure(mock_session: MockSession) -> None:
+async def test_login_happy_path_and_failure(mock_session: ClientSession) -> None:
     """Test internal login success and failure paths."""
     api = setup_api(ComeliteSerialBridgeApi, "127.0.0.1", 80, "1234", mock_session)
     login_internal: LoginMethod = call_private_async(api, "_login")
@@ -244,7 +354,7 @@ async def test_login_happy_path_and_failure(mock_session: MockSession) -> None:
     ],
 )
 async def test_translate_zone_status(
-    mock_session: MockSession,
+    mock_session: ClientSession,
     zone_status: int,
     expected: AlarmZoneState,
 ) -> None:
@@ -277,7 +387,7 @@ async def test_translate_zone_status(
     ],
 )
 async def test_translate_area_status(
-    mock_session: MockSession,
+    mock_session: ClientSession,
     area_updates: dict[str, bool | int],
     expected: AlarmAreaState,
 ) -> None:
@@ -307,7 +417,7 @@ async def test_translate_area_status(
     assert await translate_area_status(area) == expected
 
 
-async def test_create_area_and_zone_objects(mock_session: MockSession) -> None:
+async def test_create_area_and_zone_objects(mock_session: ClientSession) -> None:
     """Test creation of area and zone objects."""
     api = setup_api(ComelitVedoApi, "127.0.0.1", 80, "9999", mock_session)
     create_area_object: CreateAreaMethod = call_private_async(
@@ -347,7 +457,7 @@ async def test_create_area_and_zone_objects(mock_session: MockSession) -> None:
     assert zone.human_status == AlarmZoneState.ARMED
 
 
-async def test_async_get_page_data_present_check(mock_session: MockSession) -> None:
+async def test_async_get_page_data_present_check(mock_session: ClientSession) -> None:
     """Test async page data helper present-check behavior."""
     api = setup_api(ComelitVedoApi, "127.0.0.1", 80, "9999", mock_session)
     async_get_page_data: AsyncGetPageDataMethod = call_private_async(
