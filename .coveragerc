@@ -1,6 +1,4 @@
 [run]
 source = aiocomelit
 omit =
-    src/aiocomelit/api.py
-    src/aiocomelit/exceptions.py
     library_test.py
