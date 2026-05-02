@@ -56,17 +56,18 @@ async def test_get_area_status(
     mock_session: ClientSession,
     fixture_loader: Callable[[str], dict[str, object]],
 ) -> None:
-    """Test translating area status payload into area object."""
+    """Test get_area_status delegates with area fields and stats payload."""
     api = setup_api(ComelitVedoApi, "127.0.0.1", 80, "9999", mock_session)
     area_desc = fixture_loader("vedo/area_desc")
-    description = cast("list[str]", area_desc["description"])
-    p1_pres = cast("list[bool]", area_desc["p1_pres"])
-    p2_pres = cast("list[bool]", area_desc["p2_pres"])
+    area_stat = fixture_loader("vedo/area_stat")
+    description_list = cast("list[str]", area_desc["description"])
+    p1_pres_list = cast("list[bool]", area_desc["p1_pres"])
+    p2_pres_list = cast("list[bool]", area_desc["p2_pres"])
     area = ComelitVedoAreaObject(
         index=0,
-        name=cast("str", description),
-        p1=cast("bool", p1_pres),
-        p2=cast("bool", p2_pres),
+        name=description_list[0],
+        p1=p1_pres_list[0],
+        p2=p2_pres_list[0],
         ready=False,
         armed=0,
         alarm=False,
@@ -80,12 +81,19 @@ async def test_get_area_status(
     set_private_attr(
         api,
         "_async_get_page_data",
-        AsyncMock(return_value=(True, fixture_loader("vedo/area_stat"))),
+        AsyncMock(return_value=(True, area_stat)),
     )
+    create_mock = AsyncMock(return_value=area)
+    set_private_attr(api, "_create_area_object", create_mock)
 
     updated = await api.get_area_status(area)
-    assert updated.human_status == AlarmAreaState.ARMED
+    assert updated is area
     assert updated.name == "Perimetrale"
+    create_mock.assert_awaited_once_with(
+        {"description": "Perimetrale", "p1_pres": 0, "p2_pres": 0},
+        area_stat,
+        0,
+    )
 
 
 async def test_get_all_areas_and_zones_success(
