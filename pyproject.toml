@@ -33,6 +33,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "anyio>=4",
     "colorlog",
     "pytest>=9.0,<10",
     "pytest-cov>=5,<8",
