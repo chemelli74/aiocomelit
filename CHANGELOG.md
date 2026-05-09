@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.0.4 (2026-05-09)
+
+### Bug fixes
+
+- Update dependency @commitlint/config-conventional to v21 ([`bae1a92`](https://github.com/chemelli74/aiocomelit/commit/bae1a92cafa2787cd098122635309b56800d2c44))
+
+
 ## v2.0.3 (2026-04-27)
 
 ### Bug fixes
