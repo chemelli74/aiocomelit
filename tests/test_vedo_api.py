@@ -188,3 +188,5 @@ async def test_get_all_areas_and_zones_login_retry(
 
     with pytest.raises(CannotRetrieveData):
         await api.get_all_areas_and_zones()
+
+    login_mock.assert_awaited_once()
