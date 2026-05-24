@@ -74,7 +74,7 @@ def fixture_loader() -> Callable[[str], dict[str, JsonValue]]:
     """Load JSON fixtures from tests/fixtures."""
 
     def _load(name: str) -> dict[str, JsonValue]:
-        fixture_path = Path("tests/fixtures") / f"{name}.json"
+        fixture_path = Path(__file__).parent / "fixtures" / f"{name}.json"
         return cast("dict[str, JsonValue]", orjson.loads(fixture_path.read_bytes()))
 
     return _load
