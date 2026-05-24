@@ -1,6 +1,6 @@
 [project]
 name = "aiocomelit"
-version = "2.0.3"
+version = "2.0.4"
 requires-python = ">=3.12"
 description = "Python library to control Comelit Simplehome"
 authors = [
@@ -33,8 +33,10 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "aioresponses",
     "colorlog",
     "pytest>=9.0,<10",
+    "pytest-anyio",
     "pytest-cov>=5,<8",
 ]
 
@@ -43,7 +45,7 @@ version_toml = ["pyproject.toml:project.version"]
 version_variables = ["src/aiocomelit/__init__.py:__version__",]
 # Keep this version in sync with scripts/setup.sh and .github/workflows/ci.yml.
 build_command = """
-    python -m pip install \"uv==0.11.12\"
+    python -m pip install \"uv==0.11.16\"
     uv lock --upgrade-package "$PACKAGE_NAME"
     git add uv.lock
     uv build
@@ -67,6 +69,7 @@ prerelease = true
 
 [tool.pytest.ini_options]
 addopts = "-v -Wdefault"
+anyio_mode = "auto"
 pythonpath = ["src"]
 testpaths = ["tests"]
 

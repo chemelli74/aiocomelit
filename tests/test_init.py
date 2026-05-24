@@ -12,6 +12,7 @@ from aiocomelit.exceptions import (
     CannotConnect,
     CannotRetrieveData,
     ComelitError,
+    DeviceStorageFailureError,
 )
 
 
@@ -26,3 +27,4 @@ def test_objects_can_be_imported() -> None:
     assert type(CannotConnect)
     assert type(CannotAuthenticate)
     assert type(CannotRetrieveData)
+    assert type(DeviceStorageFailureError)
