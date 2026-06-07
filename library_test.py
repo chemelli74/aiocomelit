@@ -66,6 +66,12 @@ def get_arguments() -> tuple[ArgumentParser, Namespace]:
         help="Use Serial bridge to access VEDO",
     )
     parser.add_argument(
+        "--bridge_skip",
+        "-bs",
+        action="store_true",
+        help="Skip Serial bridge tests",
+    )
+    parser.add_argument(
         "--vedo",
         "-v",
         type=str,
@@ -258,7 +264,10 @@ async def main() -> None:
     connector = TCPConnector(force_close=True)
     session = ClientSession(cookie_jar=jar, connector=connector)
 
-    bridge_vedo_enabled = await bridge_test(session, args)
+    if args.bridge_skip:
+        bridge_vedo_enabled = False
+    else:
+        bridge_vedo_enabled = await bridge_test(session, args)
 
     # VEDO is not accessible via Serial bridge, need direct access
     if not bridge_vedo_enabled:
