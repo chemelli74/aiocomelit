@@ -125,6 +125,7 @@ class ComelitCommonApi:
         _LOGGER.debug("[%s] GET page %s", self._logging, page)
         timestamp = datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M:%S")
         url = f"{self.base_url}{page}&_={timestamp}"
+        _LOGGER.debug("[%s] GET URL: %s", self._logging, url)
         try:
             response = await self._session.get(
                 url,
@@ -183,18 +184,9 @@ class ComelitCommonApi:
         """Check if aiohttp session is still active."""
         return hasattr(self, "_session") and not self._session.closed
 
-    async def _check_logged_in(self, host_type: str) -> bool:
+    @abstractmethod
+    async def _check_logged_in(self) -> bool:
         """Check if login is active."""
-        _, reply_json = await self._get_page_result("/login.json")
-
-        logged: bool
-        _LOGGER.debug("[%s] Login reply: %s", self._logging, reply_json)
-        if host_type == BRIDGE:
-            logged = reply_json["domus"] != "000000000000"
-        else:
-            logged = reply_json["logged"] == 1
-
-        return logged
 
     async def _sleep_between_call(self, seconds: float) -> None:
         """Sleep between one call and the next one."""
@@ -207,11 +199,11 @@ class ComelitCommonApi:
     async def login(self) -> bool:
         """Login to Comelit device."""
 
-    async def _login(self, payload: dict[str, Any], host_type: str) -> bool:
+    async def _login(self, payload: dict[str, Any]) -> bool:
         """Login into Comelit device."""
         _LOGGER.debug("[%s] Logging in", self._logging)
 
-        if await self._check_logged_in(host_type):
+        if await self._check_logged_in():
             return True
 
         cookies = await self._post_page_result("/login.cgi", payload)
@@ -225,7 +217,7 @@ class ComelitCommonApi:
 
         self._session.cookie_jar.update_cookies(cookies, URL(self.base_url))
 
-        return await self._check_logged_in(host_type)
+        return await self._check_logged_in()
 
     async def logout(self) -> None:
         """Comelit Simple Home logout."""
@@ -473,6 +465,12 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
         self._semaphore = asyncio.Semaphore()
         self._initialized = False
 
+    async def _check_logged_in(self) -> bool:
+        """Check if login is active."""
+        _, reply_json = await self._get_page_result("/login.json")
+        _LOGGER.debug("[%s] Login reply: %s", self._logging, reply_json)
+        return bool(reply_json["domus"] != "000000000000")
+
     async def _translate_device_status(self, dev_type: str, dev_status: int) -> str:
         """Make status human readable."""
         if dev_type == COVER:
@@ -564,7 +562,7 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
     async def login(self) -> bool:
         """Login to Serial Bridge device."""
         payload = {"dom": self.device_pin}
-        return await self._login(payload, BRIDGE)
+        return await self._login(payload)
 
     async def get_all_devices(self) -> dict[str, dict[int, ComelitSerialBridgeObject]]:
         """Get all connected devices."""
@@ -650,7 +648,7 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
         payload = {"alm": vedo_pin}
         try:
             if vedo_pin != self.device_pin:
-                await self._login(payload, VEDO)
+                await self._login(payload)
             await self._get_page_result(f"/user/{self._vedo_url_suffix}area_desc.json")
         except (CannotAuthenticate, CannotRetrieveData):
             return False
@@ -668,4 +666,10 @@ class ComelitVedoApi(ComelitCommonApi):
     async def login(self) -> bool:
         """Login to VEDO system."""
         payload = {"code": self.device_pin}
-        return await self._login(payload, VEDO)
+        return await self._login(payload)
+
+    async def _check_logged_in(self) -> bool:
+        """Check if login is active."""
+        _, reply_json = await self._get_page_result("/login.json")
+        _LOGGER.debug("[%s] Login reply: %s", self._logging, reply_json)
+        return bool(reply_json["logged"] == 1)
