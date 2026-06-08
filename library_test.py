@@ -69,7 +69,7 @@ def get_arguments() -> tuple[ArgumentParser, Namespace]:
         "--bridge_skip",
         "-bs",
         action="store_true",
-        help="Skip Serial bridge tests",
+        help="Skip Serial bridge login",
     )
     parser.add_argument(
         "--vedo",
@@ -91,6 +91,12 @@ def get_arguments() -> tuple[ArgumentParser, Namespace]:
         type=str,
         default="",
         help="Set VEDO system pin",
+    )
+    parser.add_argument(
+        "--vedo_skip",
+        "-vs",
+        action="store_true",
+        help="Skip VEDO system login",
     )
     parser.add_argument(
         "--test",
@@ -265,12 +271,15 @@ async def main() -> None:
     session = ClientSession(cookie_jar=jar, connector=connector)
 
     if args.bridge_skip:
+        print(f"{BRIDGE}: Skipping login as requested")
         bridge_vedo_enabled = False
     else:
         bridge_vedo_enabled = await bridge_test(session, args)
 
+    if args.vedo_skip:
+        print(f"{VEDO}: Skipping login as requested")
     # VEDO is not accessible via Serial bridge, need direct access
-    if not bridge_vedo_enabled:
+    elif not bridge_vedo_enabled:
         # VEDO system mandatorily requires a pin for direct access
         if not args.vedo_pin:
             print(f"{VEDO}: Missing PIN. Skipping tests")
