@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import AsyncMock
@@ -12,7 +13,8 @@ from aiohttp import ClientSession
 from aioresponses import aioresponses
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable
+    from collections.abc import AsyncGenerator, Awaitable, Callable
+    from typing import Any
 
 JsonScalar = str | int | float | bool | None
 JsonValue = JsonScalar | list["JsonValue"] | dict[str, "JsonValue"]
@@ -45,19 +47,41 @@ def set_private_mapping_item(
     mapping[key] = value
 
 
-def call_private_async[ReturnType](
+def call_private_async(
     api: object,
     name: str,
-) -> Callable[..., Awaitable[ReturnType]]:
+) -> Callable[..., Awaitable[Any]]:
     """Get a private async method with a typed callable signature."""
     return cast(
-        "Callable[..., Awaitable[ReturnType]]",
+        "Callable[..., Awaitable[Any]]",
         object.__getattribute__(api, name),
     )
 
 
+def make_get_page_result_mock(
+    responses: dict[str, dict[str, object]],
+    default: dict[str, object] | None = None,
+) -> Callable[..., Awaitable[tuple[int, dict[str, object]]]]:
+    """Build a fake _get_page_result coroutine routing by page and query type."""
+
+    async def fake_get(
+        page: str = "",
+        query: dict[str, object] | None = None,
+    ) -> tuple[int, dict[str, object]]:
+        type_param = str((query or {}).get("type", ""))
+        lookup = f"{page}?type={type_param}" if type_param else page
+        for key, value in responses.items():
+            if lookup == key:
+                return HTTPStatus.OK, value
+        if default is not None:
+            return HTTPStatus.OK, default
+        raise AssertionError(lookup)
+
+    return fake_get
+
+
 @pytest.fixture
-async def mock_session() -> ClientSession:
+async def mock_session() -> AsyncGenerator[ClientSession]:
     """Return a real ClientSession for testing."""
     session = ClientSession()
     yield session

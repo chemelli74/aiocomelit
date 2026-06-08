@@ -16,7 +16,12 @@ from aiocomelit.exceptions import (
     CannotRetrieveData,
     DeviceStorageFailureError,
 )
-from tests.conftest import call_private_async, set_private_attr, setup_api
+from tests.conftest import (
+    call_private_async,
+    make_get_page_result_mock,
+    set_private_attr,
+    setup_api,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -24,6 +29,25 @@ if TYPE_CHECKING:
     from aiohttp import ClientSession
 
 SCENARIO_COUNT = 3
+
+_EMPTY_CLIMA_PAYLOAD: dict[str, object] = {
+    "num": 1,
+    "desc": [],
+    "status": [0],
+    "val": [0],
+    "protected": [0],
+    "env": [0],
+    "env_desc": [""],
+}
+_EMPTY_DEVICE_PAYLOAD: dict[str, object] = {
+    "num": 0,
+    "desc": [],
+    "status": [],
+    "val": [],
+    "protected": [],
+    "env": [],
+    "env_desc": [""],
+}
 
 
 async def test_bridge_login_delegates_to_common(mock_session: ClientSession) -> None:
@@ -76,10 +100,11 @@ async def test_set_thermo_humi_status_waits_and_scales(
     assert result is True
     sleep_mock.assert_awaited_once()
     get_mock.assert_awaited_once()
-    called_url = get_mock.await_args_list[0].args[0]
-    assert "clima=3" in called_url
-    assert "thermo=set" in called_url
-    assert "val=225" in called_url
+    assert get_mock.await_args is not None
+    called_query = get_mock.await_args.kwargs["query"]
+    assert called_query["clima"] == 3
+    assert called_query["thermo"] == "set"
+    assert called_query["val"] == 225
 
 
 async def test_set_clima_and_humidity_wrappers(mock_session: ClientSession) -> None:
@@ -96,16 +121,17 @@ async def test_set_clima_and_humidity_wrappers(mock_session: ClientSession) -> N
 
 
 @pytest.mark.parametrize(
-    ("action", "expected_fragment", "status_code", "expected_result"),
+    ("action", "expected_key", "expected_value", "status_code", "expected_result"),
     [
-        (1, "num1=2", HTTPStatus.OK, True),
-        (0, "num0=2", HTTPStatus.INTERNAL_SERVER_ERROR, False),
+        (1, "num1", 2, HTTPStatus.OK, True),
+        (0, "num0", 2, HTTPStatus.INTERNAL_SERVER_ERROR, False),
     ],
 )
 async def test_set_device_status(
     mock_session: ClientSession,
     action: int,
-    expected_fragment: str,
+    expected_key: str,
+    expected_value: int,
     status_code: HTTPStatus,
     expected_result: bool,
 ) -> None:
@@ -117,7 +143,7 @@ async def test_set_device_status(
     assert await api.set_device_status(LIGHT, 2, action) is expected_result
     call_args = get_mock.await_args
     assert call_args is not None
-    assert expected_fragment in call_args.args[0]
+    assert call_args.kwargs["query"][expected_key] == expected_value
 
 
 async def test_get_device_status(mock_session: ClientSession) -> None:
@@ -149,25 +175,20 @@ async def test_get_all_devices_with_real_fixtures(
     api = setup_api(ComeliteSerialBridgeApi, "127.0.0.1", 80, "1234", mock_session)
 
     responses: dict[str, dict[str, object]] = {
-        "/user/icon_desc.json?type=clima": fixture_loader("bridge/clima"),
-        "/user/icon_desc.json?type=shutter": fixture_loader("bridge/shutter"),
-        "/user/icon_desc.json?type=light": fixture_loader("bridge/light"),
-        "/user/icon_desc.json?type=irrigation": fixture_loader("bridge/irrigation"),
-        "/user/icon_desc.json?type=other": fixture_loader("bridge/other"),
-        "/user/icon_desc.json?type=scenario": fixture_loader("bridge/scenario"),
-        "/user/counter.json": counter_payload,
+        "user/icon_desc.json?type=clima": fixture_loader("bridge/clima"),
+        "user/icon_desc.json?type=shutter": fixture_loader("bridge/shutter"),
+        "user/icon_desc.json?type=light": fixture_loader("bridge/light"),
+        "user/icon_desc.json?type=irrigation": fixture_loader("bridge/irrigation"),
+        "user/icon_desc.json?type=other": fixture_loader("bridge/other"),
+        "user/icon_desc.json?type=scenario": fixture_loader("bridge/scenario"),
+        "user/counter.json": counter_payload,
     }
 
-    async def fake_get(
-        path: str, _reply_json: bool = True
-    ) -> tuple[int, dict[str, object]]:
-        """Return response payloads by request path."""
-        for key, value in responses.items():
-            if path.startswith(key):
-                return HTTPStatus.OK, value
-        raise AssertionError(path)
-
-    set_private_attr(api, "_get_page_result", AsyncMock(side_effect=fake_get))
+    set_private_attr(
+        api,
+        "_get_page_result",
+        AsyncMock(side_effect=make_get_page_result_mock(responses)),
+    )
     devices = await api.get_all_devices()
 
     assert CLIMATE in devices
@@ -196,32 +217,16 @@ async def test_get_all_devices_empty_desc_raises_when_not_initialized(
     """Test empty climate descriptions raise when bridge is not initialized."""
     api = setup_api(ComeliteSerialBridgeApi, "127.0.0.1", 80, "1234", mock_session)
     set_private_attr(api, "_initialized", False)
-
-    async def fake_get(
-        path: str, _reply_json: bool = True
-    ) -> tuple[int, dict[str, object]]:
-        """Return empty device descriptions for climate."""
-        if path.endswith("type=clima"):
-            return HTTPStatus.OK, {
-                "num": 1,
-                "desc": [],
-                "status": [0],
-                "val": [0],
-                "protected": [0],
-                "env": [0],
-                "env_desc": [""],
-            }
-        return HTTPStatus.OK, {
-            "num": 0,
-            "desc": [],
-            "status": [],
-            "val": [],
-            "protected": [],
-            "env": [],
-            "env_desc": [""],
-        }
-
-    set_private_attr(api, "_get_page_result", AsyncMock(side_effect=fake_get))
+    set_private_attr(
+        api,
+        "_get_page_result",
+        AsyncMock(
+            side_effect=make_get_page_result_mock(
+                {"user/icon_desc.json?type=clima": _EMPTY_CLIMA_PAYLOAD},
+                default=_EMPTY_DEVICE_PAYLOAD,
+            )
+        ),
+    )
 
     with pytest.raises(CannotRetrieveData):
         await api.get_all_devices()
@@ -233,32 +238,16 @@ async def test_get_all_devices_empty_desc_skips_climate_when_initialized(
     """Test empty climate descriptions are skipped once bridge is initialized."""
     api = setup_api(ComeliteSerialBridgeApi, "127.0.0.1", 80, "1234", mock_session)
     set_private_attr(api, "_initialized", True)
-
-    async def fake_get(
-        path: str, _reply_json: bool = True
-    ) -> tuple[int, dict[str, object]]:
-        """Return empty device descriptions for climate."""
-        if path.endswith("type=clima"):
-            return HTTPStatus.OK, {
-                "num": 1,
-                "desc": [],
-                "status": [0],
-                "val": [0],
-                "protected": [0],
-                "env": [0],
-                "env_desc": [""],
-            }
-        return HTTPStatus.OK, {
-            "num": 0,
-            "desc": [],
-            "status": [],
-            "val": [],
-            "protected": [],
-            "env": [],
-            "env_desc": [""],
-        }
-
-    set_private_attr(api, "_get_page_result", AsyncMock(side_effect=fake_get))
+    set_private_attr(
+        api,
+        "_get_page_result",
+        AsyncMock(
+            side_effect=make_get_page_result_mock(
+                {"user/icon_desc.json?type=clima": _EMPTY_CLIMA_PAYLOAD},
+                default=_EMPTY_DEVICE_PAYLOAD,
+            )
+        ),
+    )
 
     devices = await api.get_all_devices()
     assert CLIMATE not in devices
