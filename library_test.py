@@ -48,7 +48,7 @@ def get_arguments() -> tuple[ArgumentParser, Namespace]:
     parser.add_argument(
         "--bridge_port",
         "-bport",
-        type=str,
+        type=int,
         default=80,
         help="Set Serial bridge http port",
     )
@@ -81,7 +81,7 @@ def get_arguments() -> tuple[ArgumentParser, Namespace]:
     parser.add_argument(
         "--vedo_port",
         "-vport",
-        type=str,
+        type=int,
         default=80,
         help="Set VEDO system http port",
     )
