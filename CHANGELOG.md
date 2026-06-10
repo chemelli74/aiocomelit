@@ -1,5 +1,19 @@
 # Changelog
 
+## v2.0.5 (2026-06-10)
+
+### Bug fixes
+
+- Improve url formatting with queries ([`45fa22c`](https://github.com/chemelli74/aiocomelit/commit/45fa22ccf1d403c6abb61bc8061a344dd75f8e30))
+
+
+### Testing
+
+- Allow to skip vedo login in library_test.py ([`cc947e2`](https://github.com/chemelli74/aiocomelit/commit/cc947e2e747b33be25d40a037fdb38fcc347d3c8))
+- Allow to skip the bridge tests in library_test.py ([`3e8259a`](https://github.com/chemelli74/aiocomelit/commit/3e8259a253fe5880d0508dba22fd72251d45b024))
+- 100% coverage ([`ddc56b1`](https://github.com/chemelli74/aiocomelit/commit/ddc56b1bbac9efa9c40c4df326aff3167eb22ee7))
+
+
 ## v2.0.4 (2026-05-09)
 
 ### Bug fixes
