@@ -40,9 +40,10 @@ async def test_set_zone_status_success_and_failure(mock_session: ClientSession) 
     assert await api.set_zone_status(32, "tot", force=True) is True
     call_args = get_mock.await_args
     assert call_args is not None
-    called_url = call_args.args[0]
-    assert "tot=32" in called_url
-    assert "force=1" in called_url
+    called_query = call_args.kwargs["query"]
+    assert called_query["vedo"] == 1
+    assert called_query["tot"] == 32
+    assert called_query["force"] == 1
 
     set_private_attr(
         api,

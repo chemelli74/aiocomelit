@@ -102,7 +102,7 @@ class ComelitCommonApi:
     def __init__(self, host: str, port: int, pin: str, session: ClientSession) -> None:
         """Initialize the session."""
         self.device_pin = pin
-        self.base_url = f"http://{host}:{port}"
+        self.base_url = URL.build(scheme="http", host=host, port=port)
         self._headers = {
             "User-Agent": (
                 "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:78.0"
@@ -119,12 +119,14 @@ class ComelitCommonApi:
     async def _get_page_result(
         self,
         page: str,
+        query: dict[str, Any] | None = None,
         reply_json: bool = True,
     ) -> tuple[int, dict[str, Any]]:
         """Return status and data from a GET query."""
-        _LOGGER.debug("[%s] GET page %s", self._logging, page)
-        timestamp = datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M:%S")
-        url = f"{self.base_url}{page}&_={timestamp}"
+        url = URL.joinpath(self.base_url, page)
+        url = URL.extend_query(url, query)
+        url = URL.extend_query(url, {"_": int(datetime.now(tz=UTC).timestamp() * 1000)})
+        _LOGGER.debug("[%s] GET page %s", self._logging, url)
         try:
             response = await self._session.get(
                 url,
@@ -160,8 +162,8 @@ class ComelitCommonApi:
         payload: dict[str, Any],
     ) -> SimpleCookie:
         """Return status and data from a POST query."""
-        _LOGGER.debug("[%s] POST page %s", self._logging, page)
-        url = f"{self.base_url}{page}"
+        url = URL.joinpath(self.base_url, page)
+        _LOGGER.debug("[%s] POST page %s", self._logging, url)
         try:
             response = await self._session.post(
                 url,
@@ -185,7 +187,7 @@ class ComelitCommonApi:
 
     async def _check_logged_in(self, host_type: str) -> bool:
         """Check if login is active."""
-        _, reply_json = await self._get_page_result("/login.json")
+        _, reply_json = await self._get_page_result(page="login.json")
 
         logged: bool
         _LOGGER.debug("[%s] Login reply: %s", self._logging, reply_json)
@@ -214,7 +216,7 @@ class ComelitCommonApi:
         if await self._check_logged_in(host_type):
             return True
 
-        cookies = await self._post_page_result("/login.cgi", payload)
+        cookies = await self._post_page_result("login.cgi", payload)
         _LOGGER.debug("[%s] Cookies: %s", self._logging, cookies)
 
         if not cookies:
@@ -223,7 +225,7 @@ class ComelitCommonApi:
             )
             raise CannotAuthenticate
 
-        self._session.cookie_jar.update_cookies(cookies, URL(self.base_url))
+        self._session.cookie_jar.update_cookies(cookies, self.base_url)
 
         return await self._check_logged_in(host_type)
 
@@ -231,7 +233,7 @@ class ComelitCommonApi:
         """Comelit Simple Home logout."""
         if await self._is_session_active():
             payload = {"logout": 1}
-            await self._post_page_result("/login.cgi", payload)
+            await self._post_page_result("login.cgi", payload)
             self._session.cookie_jar.clear()
 
     async def _translate_zone_status(
@@ -309,7 +311,7 @@ class ComelitCommonApi:
         present_check: str | int | None = None,
     ) -> tuple[bool, dict[str, Any]]:
         """Return status and data from a specific GET query."""
-        _, reply_json = await self._get_page_result(page)
+        _, reply_json = await self._get_page_result(page=page)
         _LOGGER.debug("[%s] Alarm %s: %s", self._logging, desc, reply_json)
         present = present_check in reply_json["present"] if "_desc" in page else True
         return (reply_json["logged"] and present), reply_json
@@ -336,8 +338,13 @@ class ComelitCommonApi:
 
         """
         reply_status, _ = await self._get_page_result(
-            f"{self._vedo_url_action}?vedo=1&{action}={index}&force={int(force)}",
-            False,
+            page=self._vedo_url_action,
+            query={
+                "vedo": 1,
+                action: index,
+                "force": int(force),
+            },
+            reply_json=False,
         )
         return reply_status == HTTPStatus.OK
 
@@ -347,8 +354,8 @@ class ComelitCommonApi:
     ) -> ComelitVedoAreaObject:
         """Get AREA status."""
         _, reply_json_area_stat = await self._async_get_page_data(
-            "AREA statistics",
-            f"/user/{self._vedo_url_suffix}area_stat.json",
+            desc="AREA statistics",
+            page=f"user/{self._vedo_url_suffix}area_stat.json",
         )
         description = {"description": area.name, "p1_pres": area.p1, "p2_pres": area.p2}
 
@@ -365,22 +372,22 @@ class ComelitCommonApi:
         queries: dict[int, dict[str, Any]] = {
             1: {
                 "desc": "AREA description",
-                "page": f"/user/{self._vedo_url_suffix}area_desc.json",
+                "page": f"user/{self._vedo_url_suffix}area_desc.json",
                 "present": 1,
             },
             2: {
                 "desc": "ZONE description",
-                "page": f"/user/{self._vedo_url_suffix}zone_desc.json",
+                "page": f"user/{self._vedo_url_suffix}zone_desc.json",
                 "present": "1",
             },
             3: {
                 "desc": "AREA statistics",
-                "page": f"/user/{self._vedo_url_suffix}area_stat.json",
+                "page": f"user/{self._vedo_url_suffix}area_stat.json",
                 "present": None,
             },
             4: {
                 "desc": "ZONE statistics",
-                "page": f"/user/{self._vedo_url_suffix}zone_stat.json",
+                "page": f"user/{self._vedo_url_suffix}zone_stat.json",
                 "present": None,
             },
         }
@@ -508,8 +515,13 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
                 await self._sleep_between_call(delta_seconds)
 
         reply_status, _ = await self._get_page_result(
-            f"/user/action.cgi?clima={index}&{mode}={action}&val={int(value * 10)}",
-            False,
+            page="user/action.cgi",
+            query={
+                "clima": index,
+                mode: action,
+                "val": int(value * 10),
+            },
+            reply_json=False,
         )
         self._last_clima_command = datetime.now(tz=UTC)
         self._semaphore.release()
@@ -542,15 +554,20 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
 
         """
         reply_status, _ = await self._get_page_result(
-            f"/user/action.cgi?type={device_type}&num{action}={index}",
-            False,
+            page="user/action.cgi",
+            query={
+                "type": device_type,
+                f"num{action}": index,
+            },
+            reply_json=False,
         )
         return reply_status == HTTPStatus.OK
 
     async def get_device_status(self, device_type: str, index: int) -> int:
         """Get device status."""
         _, reply_json = await self._get_page_result(
-            f"/user/icon_status.json?type={device_type}",
+            page="user/icon_status.json",
+            query={"type": device_type},
         )
         _LOGGER.debug(
             "[%s] Device %s[%s] status: %s",
@@ -579,7 +596,8 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
 
         for dev_type in (CLIMATE, COVER, LIGHT, IRRIGATION, OTHER, SCENARIO):
             _, reply_json = await self._get_page_result(
-                f"/user/icon_desc.json?type={dev_type}",
+                page="user/icon_desc.json",
+                query={"type": dev_type},
             )
             _LOGGER.debug(
                 "[%s] List of devices of type %s: %s",
@@ -596,7 +614,7 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
             num_devices = reply_json["num"]
             if dev_type == OTHER and num_devices > 0:
                 _, reply_counter_json = await self._get_page_result(
-                    "/user/counter.json",
+                    page="user/counter.json",
                 )
             devices: dict[int, ComelitSerialBridgeObject] = {}
             desc = reply_json["desc"]
@@ -651,7 +669,9 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
         try:
             if vedo_pin != self.device_pin:
                 await self._login(payload, VEDO)
-            await self._get_page_result(f"/user/{self._vedo_url_suffix}area_desc.json")
+            await self._get_page_result(
+                page=f"user/{self._vedo_url_suffix}area_desc.json"
+            )
         except (CannotAuthenticate, CannotRetrieveData):
             return False
 

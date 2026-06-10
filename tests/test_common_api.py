@@ -37,7 +37,7 @@ if TYPE_CHECKING:
 
     from aiohttp import ClientSession
 
-    GetPageResultMethod = Callable[[str, bool], Awaitable[tuple[int, dict[str, Any]]]]
+    GetPageResultMethod = Callable[..., Awaitable[tuple[int, dict[str, Any]]]]
     PostPageResultMethod = Callable[[str, dict[str, Any]], Awaitable[SimpleCookie]]
     CheckLoggedInMethod = Callable[[str], Awaitable[bool]]
     IsSessionActiveMethod = Callable[[], Awaitable[bool]]
@@ -66,7 +66,7 @@ async def test_get_page_result_success(
 
     set_private_attr(api, "_session", mock_get_session(HTTPStatus.OK, {"ok": True}))
 
-    status, data = await get_page_result("/status.json", True)
+    status, data = await get_page_result("status.json")
 
     assert status == HTTPStatus.OK
     assert data == {"ok": True}
@@ -86,7 +86,7 @@ async def test_get_page_result_no_json_reply(
         mock_get_session(HTTPStatus.OK, {"ignored": True}),
     )
 
-    status, data = await get_page_result("/empty.json", False)
+    status, data = await get_page_result("empty.json", reply_json=False)
 
     assert status == HTTPStatus.OK
     assert data == {}
@@ -128,7 +128,7 @@ async def test_get_page_result_raises_on_connection_and_status_errors(
         )
 
     with pytest.raises(expected_exception):
-        await get_page_result("/status.json", True)
+        await get_page_result("status.json")
 
 
 async def test_get_page_result_raises_on_json_parsing_errors(
@@ -154,7 +154,7 @@ async def test_get_page_result_raises_on_json_parsing_errors(
         ),
     )
     with pytest.raises(DeviceStorageFailureError):
-        await get_page_result("/status.json", True)
+        await get_page_result("status.json")
 
     # Test ContentTypeError
     set_private_attr(
@@ -181,7 +181,7 @@ async def test_get_page_result_raises_on_json_parsing_errors(
         ),
     )
     with pytest.raises(DeviceStorageFailureError):
-        await get_page_result("/status.json", True)
+        await get_page_result("status.json")
 
 
 async def test_post_page_result_success_and_errors(
@@ -204,7 +204,7 @@ async def test_post_page_result_success_and_errors(
         "_session",
         AsyncMock(post=AsyncMock(return_value=mock_response)),
     )
-    result = await post_page_result("/login.cgi", {"dom": "1234"})
+    result = await post_page_result("login.cgi", {"dom": "1234"})
     assert "sid" in result
 
     # Test POST with TimeoutError
@@ -214,7 +214,7 @@ async def test_post_page_result_success_and_errors(
         AsyncMock(post=AsyncMock(side_effect=TimeoutError())),
     )
     with pytest.raises(CannotConnect):
-        await post_page_result("/login.cgi", {})
+        await post_page_result("login.cgi", {})
 
     # Test POST with ClientConnectorError
     set_private_attr(
@@ -225,7 +225,7 @@ async def test_post_page_result_success_and_errors(
         ),
     )
     with pytest.raises(CannotConnect):
-        await post_page_result("/login.cgi", {})
+        await post_page_result("login.cgi", {})
 
     # Test POST with bad status code
     mock_response = AsyncMock()
@@ -236,7 +236,7 @@ async def test_post_page_result_success_and_errors(
         AsyncMock(post=AsyncMock(return_value=mock_response)),
     )
     with pytest.raises(CannotRetrieveData):
-        await post_page_result("/login.cgi", {})
+        await post_page_result("login.cgi", {})
 
 
 async def test_session_state_and_logout(
@@ -253,16 +253,13 @@ async def test_session_state_and_logout(
     # Mock the cookie jar for tracking clear() calls
     mock_cookie_jar = Mock()
     mock_cookie_jar.clear = Mock()
-    mock_response = AsyncMock()
-    mock_response.status = HTTPStatus.OK
-    mock_response.text = AsyncMock(return_value="")
 
     mock_session_obj = AsyncMock(
-        post=AsyncMock(return_value=mock_response),
         cookie_jar=mock_cookie_jar,
         closed=False,
     )
     set_private_attr(api, "_session", mock_session_obj)
+    set_private_attr(api, "_post_page_result", AsyncMock(return_value=SimpleCookie()))
 
     await api.logout()
     mock_cookie_jar.clear.assert_called_once()
