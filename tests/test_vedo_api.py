@@ -21,12 +21,26 @@ if TYPE_CHECKING:
 AREA_COUNT = 4
 
 
-async def test_vedo_login_delegates_to_common(mock_session: ClientSession) -> None:
+@pytest.mark.parametrize(
+    "return_status",
+    [
+        HTTPStatus.OK,
+        HTTPStatus.NOT_FOUND,
+    ],
+)
+async def test_vedo_login_delegates_to_common(
+    mock_session: ClientSession, return_status: HTTPStatus
+) -> None:
     """Test VEDO login delegates to common login helper."""
     api = setup_api(ComelitVedoApi, "127.0.0.1", 80, "9999", mock_session)
     login_mock = AsyncMock(return_value=True)
     set_private_attr(api, "_login", login_mock)
 
+    set_private_attr(
+        api,
+        "_get_page_result",
+        AsyncMock(return_value=(return_status, {})),
+    )
     assert await api.login() is True
     login_mock.assert_awaited_once_with({"code": "9999"}, VEDO)
 

@@ -29,6 +29,7 @@ from .const import (
     LIGHT,
     OTHER,
     SCENARIO,
+    SLEEP_AFTER_VEDO_LOGIN,
     SLEEP_BETWEEN_BRIDGE_CALLS,
     SLEEP_BETWEEN_VEDO_CALLS,
     STATE_COVER,
@@ -187,13 +188,18 @@ class ComelitCommonApi:
 
     async def _check_logged_in(self, host_type: str) -> bool:
         """Check if login is active."""
-        _, reply_json = await self._get_page_result(page="login.json")
-
         logged: bool
-        _LOGGER.debug("[%s] Login reply: %s", self._logging, reply_json)
         if host_type == BRIDGE:
+            _, reply_json = await self._get_page_result("login.json")
+            _LOGGER.debug("[%s] Login reply: %s", self._logging, reply_json)
             logged = reply_json["domus"] != "000000000000"
         else:
+            # For VEDO system with newer firmware, login.json is reporting logged=0
+            # even if the session is active, so we check the area_stat.json instead
+            _, reply_json = await self._get_page_result(
+                f"user/{self._vedo_url_suffix}area_stat.json"
+            )
+            _LOGGER.debug("[%s] Login reply: %s", self._logging, reply_json)
             logged = reply_json["logged"] == 1
 
         return logged
@@ -218,6 +224,14 @@ class ComelitCommonApi:
 
         cookies = await self._post_page_result("login.cgi", payload)
         _LOGGER.debug("[%s] Cookies: %s", self._logging, cookies)
+
+        if host_type == VEDO:
+            _LOGGER.debug(
+                "[%s] Waiting %ss for VEDO login to complete",
+                self._logging,
+                SLEEP_AFTER_VEDO_LOGIN,
+            )
+            await self._sleep_between_call(SLEEP_AFTER_VEDO_LOGIN)
 
         if not cookies:
             _LOGGER.warning(
