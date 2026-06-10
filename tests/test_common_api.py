@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 from http import HTTPStatus
 from http.cookies import SimpleCookie
 from typing import TYPE_CHECKING, Any
@@ -37,7 +36,6 @@ if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
     from aiohttp import ClientSession
-    from aioresponses import aioresponses
 
     GetPageResultMethod = Callable[[str, bool], Awaitable[tuple[int, dict[str, Any]]]]
     PostPageResultMethod = Callable[[str, dict[str, Any]], Awaitable[SimpleCookie]]
@@ -60,44 +58,38 @@ if TYPE_CHECKING:
 
 async def test_get_page_result_success(
     mock_session: ClientSession,
-    aiohttp_mock: aioresponses,
+    mock_get_session: Callable[[int, dict[str, Any] | None], AsyncMock],
 ) -> None:
     """Test successful GET with JSON parsing."""
     api = setup_api(ComeliteSerialBridgeApi, "127.0.0.1", 80, "1234", mock_session)
     get_page_result: GetPageResultMethod = call_private_async(api, "_get_page_result")
 
-    with aiohttp_mock:
-        aiohttp_mock.get(
-            re.compile(r"http://127\.0\.0\.1(?::80)?/status\.json.*"),
-            payload={"ok": True},
-            status=HTTPStatus.OK,
-        )
+    set_private_attr(api, "_session", mock_get_session(HTTPStatus.OK, {"ok": True}))
 
-        status, data = await get_page_result("/status.json", True)
+    status, data = await get_page_result("/status.json", True)
 
-        assert status == HTTPStatus.OK
-        assert data == {"ok": True}
+    assert status == HTTPStatus.OK
+    assert data == {"ok": True}
 
 
 async def test_get_page_result_no_json_reply(
     mock_session: ClientSession,
-    aiohttp_mock: aioresponses,
+    mock_get_session: Callable[[int, dict[str, Any] | None], AsyncMock],
 ) -> None:
     """Test GET path that skips JSON parsing."""
     api = setup_api(ComeliteSerialBridgeApi, "127.0.0.1", 80, "1234", mock_session)
     get_page_result: GetPageResultMethod = call_private_async(api, "_get_page_result")
 
-    with aiohttp_mock:
-        aiohttp_mock.get(
-            re.compile(r"http://127\.0\.0\.1(?::80)?/empty\.json.*"),
-            payload={"ignored": True},
-            status=HTTPStatus.OK,
-        )
+    set_private_attr(
+        api,
+        "_session",
+        mock_get_session(HTTPStatus.OK, {"ignored": True}),
+    )
 
-        status, data = await get_page_result("/empty.json", False)
+    status, data = await get_page_result("/empty.json", False)
 
-        assert status == HTTPStatus.OK
-        assert data == {}
+    assert status == HTTPStatus.OK
+    assert data == {}
 
 
 @pytest.mark.parametrize(
@@ -114,7 +106,7 @@ async def test_get_page_result_no_json_reply(
 )
 async def test_get_page_result_raises_on_connection_and_status_errors(
     mock_session: ClientSession,
-    aiohttp_mock: aioresponses,
+    mock_get_session: Callable[[int, dict[str, Any] | None], AsyncMock],
     exception_to_raise: Exception | None,
     expected_exception: type[Exception],
 ) -> None:
@@ -122,20 +114,21 @@ async def test_get_page_result_raises_on_connection_and_status_errors(
     api = setup_api(ComeliteSerialBridgeApi, "127.0.0.1", 80, "1234", mock_session)
     get_page_result: GetPageResultMethod = call_private_async(api, "_get_page_result")
 
-    with aiohttp_mock:
-        if exception_to_raise:
-            aiohttp_mock.get(
-                re.compile(r"http://127\.0\.0\.1(?::80)?/status\.json.*"),
-                exception=exception_to_raise,
-            )
-        else:
-            aiohttp_mock.get(
-                re.compile(r"http://127\.0\.0\.1(?::80)?/status\.json.*"),
-                status=HTTPStatus.INTERNAL_SERVER_ERROR,
-            )
+    if exception_to_raise:
+        set_private_attr(
+            api,
+            "_session",
+            AsyncMock(get=AsyncMock(side_effect=exception_to_raise)),
+        )
+    else:
+        set_private_attr(
+            api,
+            "_session",
+            mock_get_session(HTTPStatus.INTERNAL_SERVER_ERROR, {}),
+        )
 
-        with pytest.raises(expected_exception):
-            await get_page_result("/status.json", True)
+    with pytest.raises(expected_exception):
+        await get_page_result("/status.json", True)
 
 
 async def test_get_page_result_raises_on_json_parsing_errors(

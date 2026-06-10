@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
+from unittest.mock import AsyncMock
 
 import orjson
 import pytest
@@ -67,6 +68,19 @@ async def mock_session() -> ClientSession:
 def aiohttp_mock() -> aioresponses:
     """Return aioresponses mock for HTTP calls."""
     return aioresponses()
+
+
+@pytest.fixture
+def mock_get_session() -> Callable[[int, dict[str, Any] | None], AsyncMock]:
+    """Build a mocked session object for GET responses."""
+
+    def _build(status: int, json_data: dict[str, Any] | None = None) -> AsyncMock:
+        response = AsyncMock(status=status)
+        if json_data is not None:
+            response.json = AsyncMock(return_value=json_data)
+        return AsyncMock(get=AsyncMock(return_value=response))
+
+    return _build
 
 
 @pytest.fixture
