@@ -47,13 +47,13 @@ def set_private_mapping_item(
     mapping[key] = value
 
 
-def call_private_async(
+def call_private_async[ReturnType](
     api: object,
     name: str,
-) -> Callable[..., Awaitable[Any]]:
+) -> Callable[..., Awaitable[ReturnType]]:
     """Get a private async method with a typed callable signature."""
     return cast(
-        "Callable[..., Awaitable[Any]]",
+        "Callable[..., Awaitable[ReturnType]]",
         object.__getattribute__(api, name),
     )
 
