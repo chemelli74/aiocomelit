@@ -122,7 +122,7 @@ def get_arguments() -> tuple[ArgumentParser, Namespace]:
     return parser, arguments
 
 
-def logger(host_type: str, host: str, port: str) -> str:
+def logger(host_type: str, host: str, port: int) -> str:
     """Create logging string."""
     return f"{host_type} ({host}:{port})"
 
