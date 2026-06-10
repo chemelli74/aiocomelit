@@ -66,7 +66,7 @@ async def test_get_page_result_success(
 
     set_private_attr(api, "_session", mock_get_session(HTTPStatus.OK, {"ok": True}))
 
-        status, data = await get_page_result("status.json")
+    status, data = await get_page_result("status.json")
 
     assert status == HTTPStatus.OK
     assert data == {"ok": True}
@@ -86,7 +86,7 @@ async def test_get_page_result_no_json_reply(
         mock_get_session(HTTPStatus.OK, {"ignored": True}),
     )
 
-        status, data = await get_page_result("empty.json", reply_json=False)
+    status, data = await get_page_result("empty.json", reply_json=False)
 
     assert status == HTTPStatus.OK
     assert data == {}
@@ -127,8 +127,8 @@ async def test_get_page_result_raises_on_connection_and_status_errors(
             mock_get_session(HTTPStatus.INTERNAL_SERVER_ERROR, {}),
         )
 
-        with pytest.raises(expected_exception):
-            await get_page_result("status.json")
+    with pytest.raises(expected_exception):
+        await get_page_result("status.json")
 
 
 async def test_get_page_result_raises_on_json_parsing_errors(
