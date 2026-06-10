@@ -226,11 +226,7 @@ class ComelitCommonApi:
         _LOGGER.debug("[%s] Cookies: %s", self._logging, cookies)
 
         if host_type == VEDO:
-            _LOGGER.debug(
-                "[%s] Waiting %ss for VEDO login to complete",
-                self._logging,
-                SLEEP_AFTER_VEDO_LOGIN,
-            )
+            _LOGGER.debug("[%s] Waiting for login to complete", self._logging)
             await self._sleep_between_call(SLEEP_AFTER_VEDO_LOGIN)
 
         if not cookies:
