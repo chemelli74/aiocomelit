@@ -124,7 +124,7 @@ class ComelitCommonApi:
     ) -> tuple[int, dict[str, Any]]:
         """Return status and data from a GET query."""
         url = URL.joinpath(self.base_url, page)
-        url = url.extend_query(query)
+        url = URL.extend_query(url, query)
         url = URL.extend_query(url, {"_": int(datetime.now(tz=UTC).timestamp() * 1000)})
         _LOGGER.debug("[%s] GET page %s", self._logging, url)
         try:
