@@ -477,7 +477,7 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
     """Queries Comelit SimpleHome Serial bridge."""
 
     _vedo_url_suffix: str = "vedo_"
-    _vedo_url_action: str = "/user/action.cgi"
+    _vedo_url_action: str = "user/action.cgi"
     _host_type = BRIDGE
 
     def __init__(
@@ -692,7 +692,7 @@ class ComelitVedoApi(ComelitCommonApi):
     """Queries Comelit SimpleHome VEDO alarm."""
 
     _vedo_url_suffix: str = ""
-    _vedo_url_action: str = "/action.cgi"
+    _vedo_url_action: str = "action.cgi"
     _host_type = VEDO
 
     async def login(self) -> bool:
