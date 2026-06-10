@@ -41,6 +41,7 @@ async def test_set_zone_status_success_and_failure(mock_session: ClientSession) 
     call_args = get_mock.await_args
     assert call_args is not None
     called_query = call_args.kwargs["query"]
+    assert called_query["vedo"] == 1
     assert called_query["tot"] == 32
     assert called_query["force"] == 1
 

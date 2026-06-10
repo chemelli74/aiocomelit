@@ -226,6 +226,7 @@ class ComelitCommonApi:
             raise CannotAuthenticate
 
         self._session.cookie_jar.update_cookies(cookies, self.base_url)
+
         return await self._check_logged_in(host_type)
 
     async def logout(self) -> None:
