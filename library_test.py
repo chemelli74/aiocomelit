@@ -29,6 +29,7 @@ from aiocomelit.const import (
     OTHER,
     STATE_ON,
     VEDO,
+    AlarmZoneState,
 )
 from aiocomelit.exceptions import CannotAuthenticate, CannotConnect, CannotRetrieveData
 
@@ -48,7 +49,7 @@ def get_arguments() -> tuple[ArgumentParser, Namespace]:
     parser.add_argument(
         "--bridge_port",
         "-bport",
-        type=str,
+        type=int,
         default=80,
         help="Set Serial bridge http port",
     )
@@ -81,7 +82,7 @@ def get_arguments() -> tuple[ArgumentParser, Namespace]:
     parser.add_argument(
         "--vedo_port",
         "-vport",
-        type=str,
+        type=int,
         default=80,
         help="Set VEDO system http port",
     )
@@ -121,7 +122,7 @@ def get_arguments() -> tuple[ArgumentParser, Namespace]:
     return parser, arguments
 
 
-def logger(host_type: str, host: str, port: str) -> str:
+def logger(host_type: str, host: str, port: int) -> str:
     """Create logging string."""
     return f"{host_type} ({host}:{port})"
 
@@ -245,8 +246,10 @@ async def vedo_test(
         print(alarm_data[ALARM_AREA][area])
     print("-" * 20)
     print(f"[{api_logging}] ZONES:")
-    for zone in alarm_data[ALARM_ZONE]:
-        print(alarm_data[ALARM_ZONE][zone])
+    for zone_index in alarm_data[ALARM_ZONE]:
+        zone = alarm_data[ALARM_ZONE][zone_index]
+        if zone.human_status != AlarmZoneState.UNAVAILABLE:
+            print(zone)
     print("-" * 20)
     area_object = alarm_data[ALARM_AREA][INDEX]
     if args.test and isinstance(area_object, ComelitVedoAreaObject):

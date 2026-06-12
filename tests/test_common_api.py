@@ -19,7 +19,13 @@ from aiocomelit.api import (
     ComelitVedoAreaObject,
     ComelitVedoZoneObject,
 )
-from aiocomelit.const import BRIDGE, VEDO, AlarmAreaState, AlarmZoneState
+from aiocomelit.const import (
+    BRIDGE,
+    SLEEP_AFTER_VEDO_LOGIN,
+    VEDO,
+    AlarmAreaState,
+    AlarmZoneState,
+)
 from aiocomelit.exceptions import (
     CannotAuthenticate,
     CannotConnect,
@@ -325,6 +331,23 @@ async def test_login_happy_path_and_failure(mock_session: ClientSession) -> None
     set_private_attr(api, "_check_logged_in", AsyncMock(side_effect=[False, False]))
     set_private_attr(api, "_post_page_result", AsyncMock(return_value=cookies))
     assert await login_internal({"dom": "1234"}, BRIDGE) is False
+
+
+async def test_login_vedo_waits_after_auth(mock_session: ClientSession) -> None:
+    """Test VEDO login waits for firmware processing before follow-up checks."""
+    api = setup_api(ComelitVedoApi, "127.0.0.1", 80, "9999", mock_session)
+    login_internal: LoginMethod = call_private_async(api, "_login")
+
+    cookies = SimpleCookie()
+    cookies["sid"] = "ok"
+    sleep_mock = AsyncMock()
+
+    set_private_attr(api, "_check_logged_in", AsyncMock(side_effect=[False, True]))
+    set_private_attr(api, "_post_page_result", AsyncMock(return_value=cookies))
+    set_private_attr(api, "_sleep_between_call", sleep_mock)
+
+    assert await login_internal({"code": "9999"}, VEDO) is True
+    sleep_mock.assert_awaited_once_with(SLEEP_AFTER_VEDO_LOGIN)
 
 
 @pytest.mark.parametrize(
