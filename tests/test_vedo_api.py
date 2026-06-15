@@ -91,7 +91,7 @@ async def test_get_area_status(
     assert updated is area
     assert updated.name == "Perimetrale"
     create_mock.assert_awaited_once_with(
-        {"description": "Perimetrale", "p1_pres": 0, "p2_pres": 0},
+        {"description": ["Perimetrale"], "p1_pres": [0], "p2_pres": [0]},
         area_stat,
         0,
     )
