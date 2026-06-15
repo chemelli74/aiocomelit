@@ -20,6 +20,7 @@ from aiocomelit.api import (
 )
 from aiocomelit.const import (
     ALARM_AREA,
+    ALARM_DISABLE,
     ALARM_ENABLE,
     ALARM_ZONE,
     BRIDGE,
@@ -27,8 +28,9 @@ from aiocomelit.const import (
     IRRIGATION,
     LIGHT,
     OTHER,
-    STATE_ON,
     VEDO,
+    AlarmAreaState,
+    AlarmZoneState,
 )
 from aiocomelit.exceptions import CannotAuthenticate, CannotConnect, CannotRetrieveData
 
@@ -48,7 +50,7 @@ def get_arguments() -> tuple[ArgumentParser, Namespace]:
     parser.add_argument(
         "--bridge_port",
         "-bport",
-        type=str,
+        type=int,
         default=80,
         help="Set Serial bridge http port",
     )
@@ -81,7 +83,7 @@ def get_arguments() -> tuple[ArgumentParser, Namespace]:
     parser.add_argument(
         "--vedo_port",
         "-vport",
-        type=str,
+        type=int,
         default=80,
         help="Set VEDO system http port",
     )
@@ -121,7 +123,7 @@ def get_arguments() -> tuple[ArgumentParser, Namespace]:
     return parser, arguments
 
 
-def logger(host_type: str, host: str, port: str) -> str:
+def logger(host_type: str, host: str, port: int) -> str:
     """Create logging string."""
     return f"{host_type} ({host}:{port})"
 
@@ -136,7 +138,7 @@ async def execute_device_test(
     print(f"[{api_logging}] Test {dev_type} device: {device.name}")
     status = await api.get_device_status(dev_type, device.index)
     print(f"[{api_logging}] Status before: {status}")
-    await api.set_device_status(dev_type, device.index, STATE_ON)
+    await api.set_device_status(dev_type, device.index, (not status))
     status = await api.get_device_status(dev_type, device.index)
     print(f"[{api_logging}] Status after: {status}")
 
@@ -146,8 +148,14 @@ async def execute_alarm_test(
 ) -> None:
     """Execute a test routine on a specific VEDO zone."""
     print(f"[{api_logging}] Test zone: {area.name}")
-    print(f"[{api_logging}] Status before: {await api.get_area_status(area)}")
-    await api.set_zone_status(area.index, ALARM_ENABLE)
+    area_object = await api.get_area_status(area)
+    print(f"[{api_logging}] Status before: {area_object}")
+    action = (
+        ALARM_DISABLE
+        if area_object.human_status == AlarmAreaState.ARMED
+        else ALARM_ENABLE
+    )
+    await api.set_zone_status(area.index, action)
     print(f"[{api_logging}] Status after: {await api.get_area_status(area)}")
 
 
@@ -245,8 +253,10 @@ async def vedo_test(
         print(alarm_data[ALARM_AREA][area])
     print("-" * 20)
     print(f"[{api_logging}] ZONES:")
-    for zone in alarm_data[ALARM_ZONE]:
-        print(alarm_data[ALARM_ZONE][zone])
+    for zone_index in alarm_data[ALARM_ZONE]:
+        zone = alarm_data[ALARM_ZONE][zone_index]
+        if zone.human_status != AlarmZoneState.UNAVAILABLE:
+            print(zone)
     print("-" * 20)
     area_object = alarm_data[ALARM_AREA][INDEX]
     if args.test and isinstance(area_object, ComelitVedoAreaObject):
