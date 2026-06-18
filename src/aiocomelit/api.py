@@ -29,6 +29,7 @@ from .const import (
     LIGHT,
     OTHER,
     SCENARIO,
+    SLEEP_AFTER_VEDO_LOGIN,
     SLEEP_BETWEEN_BRIDGE_CALLS,
     SLEEP_BETWEEN_VEDO_CALLS,
     STATE_COVER,
@@ -115,12 +116,14 @@ class ComelitCommonApi:
         self._logging = f"{self._host_type} ({host}:{port})"
         self._session = session
         self._json_data: list[dict[Any, Any]] = [{}, {}, {}, {}, {}]
+        self._is_new_firmware: bool = False
 
     async def _get_page_result(
         self,
         page: str,
         query: dict[str, Any] | None = None,
         reply_json: bool = True,
+        ignore_missing: bool = False,
     ) -> tuple[int, dict[str, Any]]:
         """Return status and data from a GET query."""
         url = URL.joinpath(self.base_url, page)
@@ -142,6 +145,9 @@ class ComelitCommonApi:
             await response.text(),
         )
 
+        if response.status == HTTPStatus.NOT_FOUND and ignore_missing:
+            return response.status, {"page": await response.text()}
+
         if response.status != HTTPStatus.OK:
             raise CannotRetrieveData(f"GET response status {response.status}")
 
@@ -160,10 +166,11 @@ class ComelitCommonApi:
         self,
         page: str,
         payload: dict[str, Any],
+        ignore_missing: bool = False,
     ) -> tuple[int, SimpleCookie]:
         """Return status and cookies from a POST query."""
         url = URL.joinpath(self.base_url, page)
-        _LOGGER.debug("[%s] POST page %s", self._logging, url)
+        _LOGGER.debug("[%s] POST page %s with payload %s", self._logging, url, payload)
         try:
             response = await self._session.post(
                 url,
@@ -176,6 +183,9 @@ class ComelitCommonApi:
 
         _LOGGER.debug("[%s] POST response %s", self._logging, await response.text())
 
+        if response.status == HTTPStatus.NOT_FOUND and ignore_missing:
+            return response.status, SimpleCookie()
+
         if response.status != HTTPStatus.OK:
             raise CannotRetrieveData(f"POST response status {response.status}")
 
@@ -187,13 +197,18 @@ class ComelitCommonApi:
 
     async def _check_logged_in(self, host_type: str) -> bool:
         """Check if login is active."""
-        _, reply_json = await self._get_page_result(page="login.json")
-
         logged: bool
-        _LOGGER.debug("[%s] Login reply: %s", self._logging, reply_json)
         if host_type == BRIDGE:
+            _, reply_json = await self._get_page_result("login.json")
+            _LOGGER.debug("[%s] Login reply: %s", self._logging, reply_json)
             logged = reply_json["domus"] != "000000000000"
         else:
+            # For VEDO system with newer firmware, login.json is reporting logged=0
+            # even if the session is active, so we check the area_stat.json instead
+            _, reply_json = await self._get_page_result(
+                f"user/{self._vedo_url_suffix}area_stat.json"
+            )
+            _LOGGER.debug("[%s] Login reply: %s", self._logging, reply_json)
             logged = reply_json["logged"] == 1
 
         return logged
@@ -204,6 +219,17 @@ class ComelitCommonApi:
             "[%s] Sleeping for %s seconds before next call", self._logging, seconds
         )
         await asyncio.sleep(seconds)
+
+    async def _check_new_firmware(self) -> bool:
+        """Check if VEDO system is running a new firmware."""
+        _, reply_data = await self._get_page_result(
+            page=f"{self._vedo_url_suffix}index.shtml",
+            ignore_missing=True,
+        )
+        _LOGGER.debug("[%s] Firmware check reply: %s", self._logging, reply_data)
+        status = bool("www.comelitgroup.com" in reply_data.get("page", ""))
+        _LOGGER.debug("[%s] New firmware: %s", self._logging, status)
+        return status
 
     @abstractmethod
     async def login(self) -> bool:
@@ -218,6 +244,12 @@ class ComelitCommonApi:
 
         _, cookies = await self._post_page_result("login.cgi", payload)
         _LOGGER.debug("[%s] Cookies: %s", self._logging, cookies)
+
+        if host_type == VEDO:
+            _LOGGER.debug("[%s] Waiting for login to complete", self._logging)
+            await self._sleep_between_call(SLEEP_AFTER_VEDO_LOGIN)
+
+            self._is_new_firmware = await self._check_new_firmware()
 
         if not cookies:
             _LOGGER.warning(
@@ -337,6 +369,22 @@ class ComelitCommonApi:
             True  = force action
 
         """
+        if self._is_new_firmware:
+            # New firmware uses HTTP POST requests with payload parameters.
+            # The device always returns HTTP 404, even when the action succeeds.
+            reply_status, _ = await self._post_page_result(
+                page=self._vedo_url_action,
+                payload={
+                    "forced": int(force),
+                    "vedo_param": 1,
+                    "type_param": action,
+                    "area_param": index,
+                },
+                ignore_missing=True,
+            )
+            return reply_status in (HTTPStatus.OK, HTTPStatus.NOT_FOUND)
+
+        # Previous firmware uses HTTP GET requests with query parameters
         reply_status, _ = await self._get_page_result(
             page=self._vedo_url_action,
             query={

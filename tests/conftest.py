@@ -36,6 +36,11 @@ def set_private_attr(api: object, name: str, value: object) -> None:
     object.__setattr__(api, name, value)
 
 
+def get_private_attr(api: object, name: str) -> object:
+    """Get private API attribute for controlled test assertions."""
+    return object.__getattribute__(api, name)
+
+
 def set_private_mapping_item(
     api: object,
     name: str,

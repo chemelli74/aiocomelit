@@ -19,7 +19,13 @@ from aiocomelit.api import (
     ComelitVedoAreaObject,
     ComelitVedoZoneObject,
 )
-from aiocomelit.const import BRIDGE, VEDO, AlarmAreaState, AlarmZoneState
+from aiocomelit.const import (
+    BRIDGE,
+    SLEEP_AFTER_VEDO_LOGIN,
+    VEDO,
+    AlarmAreaState,
+    AlarmZoneState,
+)
 from aiocomelit.exceptions import (
     CannotAuthenticate,
     CannotConnect,
@@ -28,6 +34,7 @@ from aiocomelit.exceptions import (
 )
 from tests.conftest import (
     call_private_async,
+    get_private_attr,
     set_private_attr,
     setup_api,
 )
@@ -38,9 +45,7 @@ if TYPE_CHECKING:
     from aiohttp import ClientSession
 
     GetPageResultMethod = Callable[..., Awaitable[tuple[int, dict[str, Any]]]]
-    PostPageResultMethod = Callable[
-        [str, dict[str, Any]], Awaitable[tuple[int, SimpleCookie]]
-    ]
+    PostPageResultMethod = Callable[..., Awaitable[tuple[int, SimpleCookie]]]
     CheckLoggedInMethod = Callable[[str], Awaitable[bool]]
     IsSessionActiveMethod = Callable[[], Awaitable[bool]]
     SleepMethod = Callable[[float], Awaitable[None]]
@@ -72,6 +77,19 @@ async def test_get_page_result_success(
 
     assert status == HTTPStatus.OK
     assert data == {"ok": True}
+
+    # Test ignore_missing=True with 404 response
+    mock_response = AsyncMock()
+    mock_response.status = HTTPStatus.NOT_FOUND
+    mock_response.text = AsyncMock(return_value="empty page")
+    set_private_attr(
+        api,
+        "_session",
+        AsyncMock(get=AsyncMock(return_value=mock_response)),
+    )
+    status, data = await get_page_result("index.shtml", ignore_missing=True)
+    assert status == HTTPStatus.NOT_FOUND
+    assert data == {"page": "empty page"}
 
 
 async def test_get_page_result_no_json_reply(
@@ -241,6 +259,18 @@ async def test_post_page_result_success_and_errors(
     with pytest.raises(CannotRetrieveData):
         await post_page_result("login.cgi", {})
 
+    # Test POST with ignore_missing=True and 404 response
+    mock_response = AsyncMock()
+    mock_response.status = HTTPStatus.NOT_FOUND
+    set_private_attr(
+        api,
+        "_session",
+        AsyncMock(post=AsyncMock(return_value=mock_response)),
+    )
+    status, result = await post_page_result("action.cgi", {}, ignore_missing=True)
+    assert status == HTTPStatus.NOT_FOUND
+    assert result == SimpleCookie()
+
 
 async def test_session_state_and_logout(
     mock_session: ClientSession,
@@ -340,6 +370,42 @@ async def test_login_happy_path_and_failure(mock_session: ClientSession) -> None
         AsyncMock(return_value=(HTTPStatus.OK, cookies)),
     )
     assert await login_internal({"dom": "1234"}, BRIDGE) is False
+
+
+@pytest.mark.parametrize(
+    ("new_firmware", "login_data"),
+    [
+        (True, {"page": "<html> www.comelitgroup.com </html>"}),
+        (False, {}),
+    ],
+)
+async def test_login_vedo_firmwares(
+    mock_session: ClientSession, new_firmware: bool, login_data: dict[str, str]
+) -> None:
+    """Test VEDO login waits for firmware processing before follow-up checks."""
+    api = setup_api(ComelitVedoApi, "127.0.0.1", 80, "9999", mock_session)
+    login_internal: LoginMethod = call_private_async(api, "_login")
+
+    cookies = SimpleCookie()
+    cookies["sid"] = "ok"
+    sleep_mock = AsyncMock()
+
+    set_private_attr(api, "_check_logged_in", AsyncMock(side_effect=[False, True]))
+    set_private_attr(
+        api,
+        "_post_page_result",
+        AsyncMock(return_value=(HTTPStatus.OK, cookies)),
+    )
+    set_private_attr(api, "_sleep_between_call", sleep_mock)
+    set_private_attr(
+        api,
+        "_get_page_result",
+        AsyncMock(return_value=(HTTPStatus.NOT_FOUND, login_data)),
+    )
+
+    assert await login_internal({"code": "9999"}, VEDO) is True
+    sleep_mock.assert_awaited_once_with(SLEEP_AFTER_VEDO_LOGIN)
+    assert get_private_attr(api, "_is_new_firmware") is new_firmware
 
 
 @pytest.mark.parametrize(
