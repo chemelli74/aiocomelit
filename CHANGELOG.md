@@ -1,5 +1,17 @@
 # Changelog
 
+## v2.0.6 (2026-06-15)
+
+### Bug fixes
+
+- Var type & url path ([`7aaa952`](https://github.com/chemelli74/aiocomelit/commit/7aaa95227235afb77e2e8041cf00580183677d3a))
+
+
+### Testing
+
+- Improve library_test.py script ([`f0a924b`](https://github.com/chemelli74/aiocomelit/commit/f0a924b73dec0c682a0860dda13be55f54247b7a))
+
+
 ## v2.0.5 (2026-06-10)
 
 ### Bug fixes

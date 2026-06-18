@@ -357,7 +357,11 @@ class ComelitCommonApi:
             desc="AREA statistics",
             page=f"user/{self._vedo_url_suffix}area_stat.json",
         )
-        description = {"description": area.name, "p1_pres": area.p1, "p2_pres": area.p2}
+        description = {
+            "description": [area.name],
+            "p1_pres": [area.p1],
+            "p2_pres": [area.p2],
+        }
 
         return await self._create_area_object(
             description,
@@ -467,7 +471,7 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
     """Queries Comelit SimpleHome Serial bridge."""
 
     _vedo_url_suffix: str = "vedo_"
-    _vedo_url_action: str = "/user/action.cgi"
+    _vedo_url_action: str = "user/action.cgi"
     _host_type = BRIDGE
 
     def __init__(
@@ -682,7 +686,7 @@ class ComelitVedoApi(ComelitCommonApi):
     """Queries Comelit SimpleHome VEDO alarm."""
 
     _vedo_url_suffix: str = ""
-    _vedo_url_action: str = "/action.cgi"
+    _vedo_url_action: str = "action.cgi"
     _host_type = VEDO
 
     async def login(self) -> bool:
