@@ -3,19 +3,33 @@
 from __future__ import annotations
 
 from http import HTTPStatus
-from typing import TYPE_CHECKING, cast
+from http.cookies import SimpleCookie
+from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import AsyncMock
 
 import pytest
 
 from aiocomelit.api import ComelitVedoApi, ComelitVedoAreaObject
-from aiocomelit.const import ALARM_AREA, ALARM_ZONE, VEDO, AlarmAreaState
+from aiocomelit.const import (
+    ALARM_AREA,
+    ALARM_ZONE,
+    SLEEP_AFTER_VEDO_LOGIN,
+    VEDO,
+    AlarmAreaState,
+)
 from aiocomelit.exceptions import CannotRetrieveData
-from tests.conftest import set_private_attr, set_private_mapping_item, setup_api
+from tests.conftest import (
+    call_private_async,
+    get_private_attr,
+    set_private_attr,
+    set_private_mapping_item,
+    setup_api,
+)
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Awaitable, Callable
 
+    LoginMethod = Callable[[dict[str, Any], str], Awaitable[bool]]
     from aiohttp import ClientSession
 
 AREA_COUNT = 4
@@ -31,25 +45,79 @@ async def test_vedo_login_delegates_to_common(mock_session: ClientSession) -> No
     login_mock.assert_awaited_once_with({"code": "9999"}, VEDO)
 
 
-async def test_set_zone_status_success_and_failure(mock_session: ClientSession) -> None:
+@pytest.mark.parametrize(
+    (
+        "new_firmware",
+        "page_data",
+        "http_query",
+        "http_call",
+        "http_param",
+        "success_response",
+        "failure_response",
+    ),
+    [
+        (
+            False,
+            {},
+            {"force": 1, "tot": 32, "vedo": 1},
+            "_get_page_result",
+            "query",
+            (HTTPStatus.OK, {}),
+            (HTTPStatus.INTERNAL_SERVER_ERROR, {}),
+        ),
+        (
+            True,
+            {"page": "<html> www.comelitgroup.com </html>"},
+            {"area_param": 32, "forced": 1, "type_param": "tot", "vedo_param": 1},
+            "_post_page_result",
+            "payload",
+            (HTTPStatus.NOT_FOUND, SimpleCookie()),
+            (HTTPStatus.INTERNAL_SERVER_ERROR, SimpleCookie()),
+        ),
+    ],
+)
+async def test_set_zone_status_success_and_failure(
+    mock_session: ClientSession,
+    new_firmware: bool,
+    page_data: dict[str, str],
+    http_query: dict[str, str],
+    http_call: str,
+    http_param: str,
+    success_response: tuple[HTTPStatus, dict[str, object] | SimpleCookie],
+    failure_response: tuple[HTTPStatus, dict[str, object] | SimpleCookie],
+) -> None:
     """Test set_zone_status URL generation and status handling."""
     api = setup_api(ComelitVedoApi, "127.0.0.1", 80, "9999", mock_session)
-    get_mock = AsyncMock(return_value=(HTTPStatus.OK, {}))
-    set_private_attr(api, "_get_page_result", get_mock)
+    login_internal: LoginMethod = call_private_async(api, "_login")
 
-    assert await api.set_zone_status(32, "tot", force=True) is True
-    call_args = get_mock.await_args
-    assert call_args is not None
-    called_query = call_args.kwargs["query"]
-    assert called_query["vedo"] == 1
-    assert called_query["tot"] == 32
-    assert called_query["force"] == 1
+    cookies = SimpleCookie()
+    cookies["sid"] = "ok"
+    sleep_mock = AsyncMock()
 
+    set_private_attr(api, "_check_logged_in", AsyncMock(side_effect=[False, True]))
     set_private_attr(
         api,
-        "_get_page_result",
-        AsyncMock(return_value=(HTTPStatus.INTERNAL_SERVER_ERROR, {})),
+        "_post_page_result",
+        AsyncMock(return_value=(HTTPStatus.OK, cookies)),
     )
+    set_private_attr(api, "_sleep_between_call", sleep_mock)
+
+    get_mock = AsyncMock(return_value=(HTTPStatus.NOT_FOUND, page_data))
+    set_private_attr(api, "_get_page_result", get_mock)
+    assert await login_internal({"code": "9999"}, VEDO) is True
+    sleep_mock.assert_awaited_once_with(SLEEP_AFTER_VEDO_LOGIN)
+    assert get_private_attr(api, "_is_new_firmware") is new_firmware
+
+    http_mock = AsyncMock(return_value=success_response)
+    set_private_attr(api, http_call, http_mock)
+    assert await api.set_zone_status(32, "tot", force=True) is True
+    call_args = http_mock.await_args
+    assert call_args is not None
+    called_query = call_args.kwargs[http_param]
+    assert called_query == http_query
+
+    http_fail_mock = AsyncMock(return_value=failure_response)
+    set_private_attr(api, http_call, http_fail_mock)
     assert await api.set_zone_status(1, "dis", force=False) is False
 
 
