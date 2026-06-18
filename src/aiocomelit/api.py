@@ -160,7 +160,7 @@ class ComelitCommonApi:
         self,
         page: str,
         payload: dict[str, Any],
-    ) -> SimpleCookie:
+    ) -> tuple[int, SimpleCookie]:
         """Return status and data from a POST query."""
         url = URL.joinpath(self.base_url, page)
         _LOGGER.debug("[%s] POST page %s", self._logging, url)
@@ -179,7 +179,7 @@ class ComelitCommonApi:
         if response.status != HTTPStatus.OK:
             raise CannotRetrieveData(f"POST response status {response.status}")
 
-        return cast("SimpleCookie", response.cookies)
+        return response.status, cast("SimpleCookie", response.cookies)
 
     async def _is_session_active(self) -> bool:
         """Check if aiohttp session is still active."""
@@ -216,7 +216,7 @@ class ComelitCommonApi:
         if await self._check_logged_in(host_type):
             return True
 
-        cookies = await self._post_page_result("login.cgi", payload)
+        _, cookies = await self._post_page_result("login.cgi", payload)
         _LOGGER.debug("[%s] Cookies: %s", self._logging, cookies)
 
         if not cookies:
