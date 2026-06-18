@@ -38,7 +38,9 @@ if TYPE_CHECKING:
     from aiohttp import ClientSession
 
     GetPageResultMethod = Callable[..., Awaitable[tuple[int, dict[str, Any]]]]
-    PostPageResultMethod = Callable[[str, dict[str, Any]], Awaitable[SimpleCookie]]
+    PostPageResultMethod = Callable[
+        [str, dict[str, Any]], Awaitable[tuple[int, SimpleCookie]]
+    ]
     CheckLoggedInMethod = Callable[[str], Awaitable[bool]]
     IsSessionActiveMethod = Callable[[], Awaitable[bool]]
     SleepMethod = Callable[[float], Awaitable[None]]
@@ -96,7 +98,7 @@ async def test_get_page_result_no_json_reply(
     ("exception_to_raise", "expected_exception"),
     [
         (TimeoutError(), CannotConnect),
-        (ClientConnectorError(None, OSError("boom")), CannotConnect),
+        (ClientConnectorError(Mock(), OSError("boom")), CannotConnect),
         pytest.param(
             None,  # No exception, bad status code
             CannotRetrieveData,
@@ -204,7 +206,8 @@ async def test_post_page_result_success_and_errors(
         "_session",
         AsyncMock(post=AsyncMock(return_value=mock_response)),
     )
-    result = await post_page_result("login.cgi", {"dom": "1234"})
+    status, result = await post_page_result("login.cgi", {"dom": "1234"})
+    assert status == HTTPStatus.OK
     assert "sid" in result
 
     # Test POST with TimeoutError
@@ -221,7 +224,7 @@ async def test_post_page_result_success_and_errors(
         api,
         "_session",
         AsyncMock(
-            post=AsyncMock(side_effect=ClientConnectorError(None, OSError("boom")))
+            post=AsyncMock(side_effect=ClientConnectorError(Mock(), OSError("boom")))
         ),
     )
     with pytest.raises(CannotConnect):
@@ -259,7 +262,11 @@ async def test_session_state_and_logout(
         closed=False,
     )
     set_private_attr(api, "_session", mock_session_obj)
-    set_private_attr(api, "_post_page_result", AsyncMock(return_value=SimpleCookie()))
+    set_private_attr(
+        api,
+        "_post_page_result",
+        AsyncMock(return_value=(HTTPStatus.OK, SimpleCookie())),
+    )
 
     await api.logout()
     mock_cookie_jar.clear.assert_called_once()
@@ -316,14 +323,22 @@ async def test_login_happy_path_and_failure(mock_session: ClientSession) -> None
     post_mock.assert_not_awaited()
 
     set_private_attr(api, "_check_logged_in", AsyncMock(side_effect=[False]))
-    set_private_attr(api, "_post_page_result", AsyncMock(return_value=SimpleCookie()))
+    set_private_attr(
+        api,
+        "_post_page_result",
+        AsyncMock(return_value=(HTTPStatus.OK, SimpleCookie())),
+    )
     with pytest.raises(CannotAuthenticate):
         await login_internal({"dom": "1234"}, BRIDGE)
 
     cookies = SimpleCookie()
     cookies["sid"] = "ok"
     set_private_attr(api, "_check_logged_in", AsyncMock(side_effect=[False, False]))
-    set_private_attr(api, "_post_page_result", AsyncMock(return_value=cookies))
+    set_private_attr(
+        api,
+        "_post_page_result",
+        AsyncMock(return_value=(HTTPStatus.OK, cookies)),
+    )
     assert await login_internal({"dom": "1234"}, BRIDGE) is False
 
 
