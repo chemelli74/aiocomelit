@@ -38,7 +38,9 @@ if TYPE_CHECKING:
     from aiohttp import ClientSession
 
     GetPageResultMethod = Callable[..., Awaitable[tuple[int, dict[str, Any]]]]
-    PostPageResultMethod = Callable[..., Awaitable[tuple[int, SimpleCookie]]]
+    PostPageResultMethod = Callable[
+        [str, dict[str, Any]], Awaitable[tuple[int, SimpleCookie]]
+    ]
     CheckLoggedInMethod = Callable[[str], Awaitable[bool]]
     IsSessionActiveMethod = Callable[[], Awaitable[bool]]
     SleepMethod = Callable[[float], Awaitable[None]]
