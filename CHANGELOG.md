@@ -1,5 +1,17 @@
 # Changelog
 
+## v2.0.7 (2026-06-18)
+
+### Bug fixes
+
+- Handle new vedo firmware versions ([`e90ad06`](https://github.com/chemelli74/aiocomelit/commit/e90ad067e0d1f56c58da615638e5bb5376f99851))
+
+
+### Refactoring
+
+- Return post status ([`8e4bbdf`](https://github.com/chemelli74/aiocomelit/commit/8e4bbdf5eb0c58c4cea29568fd39ca6070192cd5))
+
+
 ## v2.0.6 (2026-06-15)
 
 ### Bug fixes
