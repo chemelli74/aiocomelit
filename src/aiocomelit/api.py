@@ -161,7 +161,7 @@ class ComelitCommonApi:
         page: str,
         payload: dict[str, Any],
     ) -> tuple[int, SimpleCookie]:
-        """Return status and data from a POST query."""
+        """Return status and cookies from a POST query."""
         url = URL.joinpath(self.base_url, page)
         _LOGGER.debug("[%s] POST page %s", self._logging, url)
         try:
