@@ -7,7 +7,8 @@ set -e
 # Use copy mode for UV to avoid hardlink warnings on different filesystems
 export UV_LINK_MODE=copy
 
-UV_VERSION="0.11.26" # renovate: depName=uv datasource=pypi
+# Fetch the centralized uv version from the companion script
+UV_VERSION=$(./scripts/get-pyproject-uv.version.sh)
 
 if ! uv --version 2>/dev/null; then
     pipx install "uv==$UV_VERSION"
@@ -17,7 +18,7 @@ fi
 if ! prek --version 2>/dev/null; then
     uv tool install prek
 fi
-uv sync --frozen --group dev
+uv sync --frozen --all-groups
 prek install --overwrite
 prek install --hook-type commit-msg --overwrite
 
