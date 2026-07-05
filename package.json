@@ -1,5 +1,5 @@
 {
   "dependencies": {
-    "@commitlint/config-conventional": "^21.0.0"
+    "@commitlint/config-conventional": "^21.2.0"
   }
 }
