@@ -50,7 +50,7 @@ repos:
       - id: codespell
         args: ["--skip=tests/fixtures/*.json"]
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v2.2.0
+    rev: v2.3.0
     hooks:
       - id: mypy
         additional_dependencies: []
