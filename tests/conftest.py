@@ -1,3 +1,6 @@
+# Copyright 2023 Simone Chemelli and contributors
+# SPDX-License-Identifier: Apache-2.0
+
 """Shared test fixtures for aiocomelit."""
 
 from __future__ import annotations
