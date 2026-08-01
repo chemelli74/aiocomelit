@@ -34,3 +34,7 @@ max-complexity = 18
 
 [lint.isort]
 known-first-party = ["aiocomelit", "tests"]
+
+[lint.flake8-copyright]
+notice-rgx = '''(?i)# Copyright \d{4} Simone Chemelli and Contributors
+# SPDX-License-Identifier: Apache-2.0'''
