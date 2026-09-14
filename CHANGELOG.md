@@ -1,5 +1,25 @@
 # Changelog
 
+## v2.0.8 (2026-09-14)
+
+### Bug fixes
+
+- Release bridge semaphore on climate/humidity command failure ([`1b45dcb`](https://github.com/chemelli74/aiocomelit/commit/1b45dcbf85930fcd7093f10c0f06f33954789f41))
+
+
+### Build system
+
+- Tweaks ([`aa471ab`](https://github.com/chemelli74/aiocomelit/commit/aa471abcc59870a041c76999b83ec367dd3c8ef3))
+- Force lf ([`cba0bf3`](https://github.com/chemelli74/aiocomelit/commit/cba0bf394ebf411f9c495ba646ead1939dfad190))
+- Fix ruff configuration ([`1b2f443`](https://github.com/chemelli74/aiocomelit/commit/1b2f4430c6ddfbaa547cc3030372483b6b3fe6fe))
+- Improve update system ([`7c8cec4`](https://github.com/chemelli74/aiocomelit/commit/7c8cec4417500c3f5546788af0c3a470a2584398))
+
+
+### Testing
+
+- Add copyright notice ([`16fed5a`](https://github.com/chemelli74/aiocomelit/commit/16fed5a06ad71d4122d99b49beff4ffa71d809a4))
+
+
 ## v2.0.7 (2026-06-18)
 
 ### Bug fixes
