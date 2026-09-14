@@ -555,31 +555,33 @@ class ComeliteSerialBridgeApi(ComelitCommonApi):
             auto, man, on, off, set
 
         """
-        await self._semaphore.acquire()
-        if self._last_clima_command:
-            delta_seconds = SLEEP_BETWEEN_BRIDGE_CALLS - round(
-                (datetime.now(tz=UTC) - self._last_clima_command).total_seconds(),
-                2,
-            )
-            if delta_seconds > 0:
-                _LOGGER.debug(
-                    "[%s] Climate calls needs to be queued (%ss) for proper execution",
-                    self._logging,
-                    delta_seconds,
+        async with self._semaphore:
+            if self._last_clima_command:
+                delta_seconds = SLEEP_BETWEEN_BRIDGE_CALLS - round(
+                    (datetime.now(tz=UTC) - self._last_clima_command).total_seconds(),
+                    2,
                 )
-                await self._sleep_between_call(delta_seconds)
+                if delta_seconds > 0:
+                    _LOGGER.debug(
+                        "[%s] Climate calls needs to be queued (%ss) for proper"
+                        " execution",
+                        self._logging,
+                        delta_seconds,
+                    )
+                    await self._sleep_between_call(delta_seconds)
 
-        reply_status, _ = await self._get_page_result(
-            page="user/action.cgi",
-            query={
-                "clima": index,
-                mode: action,
-                "val": int(value * 10),
-            },
-            reply_json=False,
-        )
-        self._last_clima_command = datetime.now(tz=UTC)
-        self._semaphore.release()
+            try:
+                reply_status, _ = await self._get_page_result(
+                    page="user/action.cgi",
+                    query={
+                        "clima": index,
+                        mode: action,
+                        "val": int(value * 10),
+                    },
+                    reply_json=False,
+                )
+            finally:
+                self._last_clima_command = datetime.now(tz=UTC)
         return reply_status == HTTPStatus.OK
 
     async def set_clima_status(self, index: int, action: str, temp: float = 0) -> bool:
