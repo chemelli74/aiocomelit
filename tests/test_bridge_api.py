@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from datetime import UTC, datetime
 from http import HTTPStatus
 from typing import TYPE_CHECKING
@@ -16,6 +17,7 @@ from aiocomelit.api import ComeliteSerialBridgeApi
 from aiocomelit.const import BRIDGE, CLIMATE, COVER, LIGHT, OTHER, SCENARIO
 from aiocomelit.exceptions import (
     CannotAuthenticate,
+    CannotConnect,
     CannotRetrieveData,
     DeviceStorageFailureError,
 )
@@ -108,6 +110,30 @@ async def test_set_thermo_humi_status_waits_and_scales(
     assert called_query["clima"] == 3
     assert called_query["thermo"] == "set"
     assert called_query["val"] == 225
+
+
+async def test_set_thermo_humi_status_releases_semaphore_on_error(
+    mock_session: ClientSession,
+) -> None:
+    """Test the semaphore is released even if the HTTP call raises."""
+    api = setup_api(ComeliteSerialBridgeApi, "127.0.0.1", 80, "1234", mock_session)
+    set_private_attr(api, "_sleep_between_call", AsyncMock())
+    set_private_attr(
+        api, "_get_page_result", AsyncMock(side_effect=CannotConnect("boom"))
+    )
+
+    with pytest.raises(CannotConnect):
+        await api.set_clima_status(1, "set", 20.0)
+
+    set_private_attr(
+        api, "_get_page_result", AsyncMock(return_value=(HTTPStatus.OK, {}))
+    )
+
+    # A short timeout turns a still-held semaphore into a clean failure
+    # instead of an indefinite hang.
+    result = await asyncio.wait_for(api.set_clima_status(1, "set", 21.0), timeout=1)
+
+    assert result is True
 
 
 async def test_set_clima_and_humidity_wrappers(mock_session: ClientSession) -> None:
