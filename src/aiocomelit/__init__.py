@@ -3,7 +3,7 @@
 
 """aiocomelit library."""
 
-__version__ = "2.0.8"
+__version__ = "3.0.0"
 
 from .api import ComelitDeviceObject, ComelitVedoAreaObject, ComelitVedoZoneObject
 from .devices.bridge import ComeliteSerialBridgeApi

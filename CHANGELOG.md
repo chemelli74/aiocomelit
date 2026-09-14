@@ -1,5 +1,12 @@
 # Changelog
 
+## v3.0.0 (2026-09-14)
+
+### Refactoring
+
+- Split api.py into common base and per-device modules ([`574951f`](https://github.com/chemelli74/aiocomelit/commit/574951f298050db1378d5ea99833ab8d3d9ec130))
+
+
 ## v2.0.8 (2026-09-14)
 
 ### Bug fixes
