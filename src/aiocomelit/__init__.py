@@ -5,13 +5,9 @@
 
 __version__ = "2.0.8"
 
-from .api import (
-    ComeliteSerialBridgeApi,
-    ComelitSerialBridgeObject,
-    ComelitVedoApi,
-    ComelitVedoAreaObject,
-    ComelitVedoZoneObject,
-)
+from .api import ComelitDeviceObject, ComelitVedoAreaObject, ComelitVedoZoneObject
+from .devices.bridge import ComeliteSerialBridgeApi
+from .devices.vedo import ComelitVedoApi
 from .exceptions import (
     CannotAuthenticate,
     CannotConnect,
@@ -24,8 +20,8 @@ __all__ = [
     "CannotAuthenticate",
     "CannotConnect",
     "CannotRetrieveData",
+    "ComelitDeviceObject",
     "ComelitError",
-    "ComelitSerialBridgeObject",
     "ComelitVedoApi",
     "ComelitVedoAreaObject",
     "ComelitVedoZoneObject",

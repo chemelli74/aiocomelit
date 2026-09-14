@@ -15,10 +15,8 @@ from colorlog import ColoredFormatter
 
 from aiocomelit import __version__
 from aiocomelit.api import (
-    ComelitCommonApi,
-    ComeliteSerialBridgeApi,
-    ComelitSerialBridgeObject,
-    ComelitVedoApi,
+    ComelitDeviceObject,
+    ComelitHttpApi,
     ComelitVedoAreaObject,
 )
 from aiocomelit.const import (
@@ -35,6 +33,8 @@ from aiocomelit.const import (
     AlarmAreaState,
     AlarmZoneState,
 )
+from aiocomelit.devices.bridge import ComeliteSerialBridgeApi
+from aiocomelit.devices.vedo import ComelitVedoApi
 from aiocomelit.exceptions import CannotAuthenticate, CannotConnect, CannotRetrieveData
 
 INDEX = 0
@@ -133,7 +133,7 @@ def logger(host_type: str, host: str, port: int) -> str:
 
 async def execute_device_test(
     api: ComeliteSerialBridgeApi,
-    device: ComelitSerialBridgeObject,
+    device: ComelitDeviceObject,
     dev_type: str,
     api_logging: str,
 ) -> None:
@@ -147,7 +147,7 @@ async def execute_device_test(
 
 
 async def execute_alarm_test(
-    api: ComelitCommonApi, area: ComelitVedoAreaObject, api_logging: str
+    api: ComelitHttpApi, area: ComelitVedoAreaObject, api_logging: str
 ) -> None:
     """Execute a test routine on a specific VEDO zone."""
     print(f"[{api_logging}] Test zone: {area.name}")
@@ -223,7 +223,7 @@ async def vedo_test(
     bridge_api: ComeliteSerialBridgeApi | None = None,
 ) -> None:
     """Test code for Comelit VEDO system."""
-    api: ComelitCommonApi
+    api: ComelitHttpApi
 
     if not bridge_api:
         api = ComelitVedoApi(args.vedo, args.vedo_port, args.vedo_pin, session)
