@@ -13,8 +13,8 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from aiocomelit.api import ComeliteSerialBridgeApi
 from aiocomelit.const import BRIDGE, CLIMATE, COVER, LIGHT, OTHER, SCENARIO
+from aiocomelit.devices.bridge import ComeliteSerialBridgeApi
 from aiocomelit.exceptions import (
     CannotAuthenticate,
     CannotConnect,
