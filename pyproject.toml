@@ -74,7 +74,7 @@ match = "(?!main$)"
 prerelease = true
 
 [tool.pytest.ini_options]
-addopts = "-v -Wdefault"
+addopts = "-v -Wdefault --cov=aiocomelit --cov-report=term-missing"
 anyio_mode = "auto"
 pythonpath = ["src"]
 testpaths = ["tests"]
