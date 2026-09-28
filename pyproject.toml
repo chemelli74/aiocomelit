@@ -81,6 +81,8 @@ testpaths = ["tests"]
 
 [tool.coverage.run]
 branch = true
+source = ["aiocomelit"]
+omit = ["library_test.py"]
 
 [tool.coverage.report]
 exclude_lines = [
