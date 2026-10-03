@@ -7,6 +7,7 @@ __version__ = "3.0.0"
 
 from .api import ComelitDeviceObject, ComelitVedoAreaObject, ComelitVedoZoneObject
 from .devices.bridge import ComeliteSerialBridgeApi
+from .devices.hub import ComelitHubApi
 from .devices.vedo import ComelitVedoApi
 from .exceptions import (
     CannotAuthenticate,
@@ -22,6 +23,7 @@ __all__ = [
     "CannotRetrieveData",
     "ComelitDeviceObject",
     "ComelitError",
+    "ComelitHubApi",
     "ComelitVedoApi",
     "ComelitVedoAreaObject",
     "ComelitVedoZoneObject",
