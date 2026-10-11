@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from http import HTTPStatus
 from http.cookies import SimpleCookie
-from typing import Any, cast
+from typing import Any
 
 import orjson
 from aiohttp import ClientConnectorError, ClientSession, ContentTypeError
@@ -193,7 +193,7 @@ class ComelitHttpApi(ComelitCommonApi):
         if response.status != HTTPStatus.OK:
             raise CannotRetrieveData(f"POST response status {response.status}")
 
-        return response.status, cast("SimpleCookie", response.cookies)
+        return response.status, response.cookies
 
     async def _is_session_active(self) -> bool:
         """Check if aiohttp session is still active."""

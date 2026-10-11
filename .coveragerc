@@ -1,4 +1,0 @@
-[run]
-source = aiocomelit
-omit =
-    library_test.py

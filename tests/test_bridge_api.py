@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from http import HTTPStatus
 from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock
@@ -89,12 +89,23 @@ async def test_translate_device_status(
     assert await method(dev_type, status) == expected
 
 
+@pytest.mark.parametrize(
+    ("last_command_age", "expected_sleeps"),
+    [
+        pytest.param(timedelta(0), 1, id="recent_command_waits"),
+        pytest.param(timedelta(minutes=1), 0, id="old_command_no_wait"),
+    ],
+)
 async def test_set_thermo_humi_status_waits_and_scales(
     mock_session: ClientSession,
+    last_command_age: timedelta,
+    expected_sleeps: int,
 ) -> None:
     """Test thermo/humidity helper queueing and value scaling."""
     api = setup_api(ComeliteSerialBridgeApi, "127.0.0.1", 80, "1234", mock_session)
-    set_private_attr(api, "_last_clima_command", datetime.now(tz=UTC))
+    set_private_attr(
+        api, "_last_clima_command", datetime.now(tz=UTC) - last_command_age
+    )
     sleep_mock = AsyncMock()
     get_mock = AsyncMock(return_value=(HTTPStatus.OK, {}))
     set_private_attr(api, "_sleep_between_call", sleep_mock)
@@ -103,7 +114,7 @@ async def test_set_thermo_humi_status_waits_and_scales(
     result = await api.set_clima_status(3, "set", 22.5)
 
     assert result is True
-    sleep_mock.assert_awaited_once()
+    assert sleep_mock.await_count == expected_sleeps
     get_mock.assert_awaited_once()
     assert get_mock.await_args is not None
     called_query = get_mock.await_args.kwargs["query"]
@@ -191,6 +202,7 @@ async def test_get_device_status(mock_session: ClientSession) -> None:
     ("counter_payload", "expected_power"),
     [
         ({"instant": ["1 kW"], "logged": 1}, 1000.0),
+        ({"instant": [""], "logged": 1}, 0.0),
         ({"logged": 1}, 0.0),
     ],
 )
