@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.12"
 
 [[package]]
@@ -23,8 +23,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aiohttp", specifier = ">=3.12.7" },
-    { name = "orjson", specifier = ">=3.10,<4" },
+    { name = "aiohttp", specifier = ">=3.14.5" },
+    { name = "orjson", specifier = ">=3.13.0,<4" },
     { name = "pint" },
 ]
 
@@ -32,9 +32,9 @@ requires-dist = [
 dev = [
     { name = "aioresponses" },
     { name = "colorlog" },
-    { name = "pytest", specifier = ">=9.0,<10" },
+    { name = "pytest", specifier = ">=9.1.1,<10" },
     { name = "pytest-anyio" },
-    { name = "pytest-cov", specifier = ">=5,<8" },
+    { name = "pytest-cov", specifier = ">=7.1.0,<8" },
 ]
 
 [[package]]
