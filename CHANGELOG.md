@@ -1,5 +1,27 @@
 # Changelog
 
+## v3.0.1 (2026-10-18)
+
+### Bug fixes
+
+- Update python dependencies ([`1e40a64`](https://github.com/chemelli74/aiocomelit/commit/1e40a64827516c6ceb2db4db3d94e873b0cf58b9))
+
+
+### Build system
+
+- Update devcontainer, vscode and renovate ([`e73ae6b`](https://github.com/chemelli74/aiocomelit/commit/e73ae6b50061a2c93159421c241b7f450a9c12f0))
+- Always use the repository .venv for uv ([`99da2d0`](https://github.com/chemelli74/aiocomelit/commit/99da2d0e46ac011110fc76e883ccb46c91576699))
+- Bump multidict from 6.7.1 to 6.9.1 in the uv group across 1 directory ([`992cd96`](https://github.com/chemelli74/aiocomelit/commit/992cd9640913b7174b25347519899fd2820ac8dc))
+- Move coverage config to pyproject ([`caa396e`](https://github.com/chemelli74/aiocomelit/commit/caa396e05da36334e245f3d8dd988a1ae76bbf42))
+- Pin mypy hook deps for local and ci alignment ([`0126ea7`](https://github.com/chemelli74/aiocomelit/commit/0126ea7363b7108227a90c92df580f9474392b15))
+- Exclude only fixture folders from codespell ([`12d2334`](https://github.com/chemelli74/aiocomelit/commit/12d2334808d152b896b6634d1ae3926142fae3d6))
+- Remove unused ruff ignores ([`672278d`](https://github.com/chemelli74/aiocomelit/commit/672278d39b54613494d75a3f89c19afda611af32))
+- Allow orjson extension in pylint ([`cb93674`](https://github.com/chemelli74/aiocomelit/commit/cb93674cccf7df66b049a676bcf7aeff2d7cc323))
+- Enable coverage collection in pytest ([`70cce26`](https://github.com/chemelli74/aiocomelit/commit/70cce26404a35f1d84169c723d154adf908f58c7))
+- Replace unmaintained labels tool ([`c3fc91c`](https://github.com/chemelli74/aiocomelit/commit/c3fc91c018f5aae8076298d2f30c746889981d03))
+- Bump anyio from 4.14.1 to 4.14.2 in the uv group across 1 directory ([`4e67db5`](https://github.com/chemelli74/aiocomelit/commit/4e67db511edb0f48c9c125da7968f88824cc53f5))
+
+
 ## v3.0.0 (2026-09-14)
 
 ### Refactoring
