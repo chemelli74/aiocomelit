@@ -58,5 +58,5 @@ repos:
         additional_dependencies:
           - aiohttp==3.14.5
           - orjson==3.13.0
-          - pint==0.26.1
+          - pint==0.26.2
           - yarl==1.25.1
