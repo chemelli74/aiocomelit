@@ -128,5 +128,5 @@ where = ["src"]
 include = ["aiocomelit*"]
 
 [build-system]
-requires = ["setuptools>=84.0.0", "wheel"]
+requires = ["setuptools>=84.2.0", "wheel"]
 build-backend = "setuptools.build_meta"
