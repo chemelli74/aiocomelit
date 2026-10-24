@@ -4,17 +4,19 @@
 """Constants for Comelit Simple Home."""
 
 import logging
-from enum import Enum
+from enum import Enum, IntEnum, StrEnum
 
 from aiohttp import ClientTimeout
 
 _LOGGER = logging.getLogger(__package__)
 
 DEFAULT_TIMEOUT = ClientTimeout(10)
+DEFAULT_HUB_MQTT_PORT = 1883
 
 # Host types
 BRIDGE = "Serial bridge"
 VEDO = "Vedo system"
+HUB = "Hub"
 
 # Device types
 CLIMATE = "clima"
@@ -94,3 +96,36 @@ SLEEP_AFTER_VEDO_LOGIN = 1.5
 
 # DEFAULT POWER UNIT
 WATT = "W"
+
+
+# Hub (MQTT) specific
+class HubRequestType(IntEnum):
+    """Comelit Hub MQTT request types."""
+
+    STATUS = 0
+    ACTION = 1
+    LOGIN = 5
+    PARAMETERS = 8
+    ANNOUNCE = 13
+
+
+class HubElementClass(StrEnum):
+    """Comelit Hub element id prefixes, identifying a device's role."""
+
+    LOGICAL = "GEN#PL"
+    AUTOMATION = "DOM#AU"
+    LIGHT = "DOM#LT"
+    POWER = "DOM#CN"
+    TEMPERATURE = "DOM#CL"
+    COVER = "DOM#BL"
+    SCENARIO = "GEN#SC"
+    OTHER = "DOM#LD"
+
+
+HUB_TOPIC_PREFIX = "HSrv"
+HUB_STATUS_OBJ_ID = "GEN#17#13#1"
+HUB_REQUEST_TIMEOUT = 10.0
+
+# Default MQTT broker credentials shared by most Comelit Hub installs
+DEFAULT_HUB_MQTT_USER = "hsrv-user"
+DEFAULT_HUB_MQTT_PASSWORD = "sf1nE9bjPc"  # noqa: S105
