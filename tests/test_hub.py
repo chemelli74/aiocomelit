@@ -496,15 +496,37 @@ async def test_get_all_devices_handles_nested_groups_and_odd_status(
     mqtt_clients: list[FakeMqttClient],
     fixture_loader: Callable[[str], dict[str, Any]],
 ) -> None:
-    """Test nested logical groups recurse and out-of-range status normalizes."""
+    """Test nested groups recurse, odd status normalizes, unknown elements skip."""
     api = _make_api()
     await api.login()
     mqtt_clients[0].status_elements = fixture_loader("hub/status_elements_nested")[
         "elements"
     ]
 
+    await api.get_all_devices()
+    # Second poll reuses the indexes assigned on first sight
     devices = await api.get_all_devices()
 
+    assert devices[LIGHT] == {0: devices[LIGHT][0]}
     assert devices[LIGHT][0].name == "Nested Light"
     assert devices[COVER][0].status == 0
     assert devices[COVER][0].human_status == "stopped"
+    assert devices[CLIMATE] == {}
+    assert devices[OTHER] == {}
+
+
+async def test_message_loop_ignores_unexpected_messages(
+    mqtt_clients: list[FakeMqttClient],
+) -> None:
+    """Test token-less login replies and unknown request types are ignored."""
+    api = _make_api()
+    await api.login()
+    client = mqtt_clients[0]
+
+    await client.push_raw(orjson.dumps({"req_type": 5}))
+    await client.push_raw(orjson.dumps({"req_type": 99}))
+    client.status_elements = []
+    devices = await api.get_all_devices()
+
+    assert devices[LIGHT] == {}
+    assert get_private_attr(api, "_session_token") == "test-token"

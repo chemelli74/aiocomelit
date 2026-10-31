@@ -26,6 +26,25 @@
                 "status": "9"
               }
             }
+          },
+          {
+            "data": {
+              "id": "DOM#CL#2#3",
+              "data": {
+                "descrizione": "Unsupported Thermostat",
+                "sub_type": 3,
+                "status": "1"
+              }
+            }
+          },
+          {
+            "data": {
+              "id": "DOM#CN#2#4",
+              "data": {
+                "descrizione": "Power Meter",
+                "status": "1"
+              }
+            }
           }
         ]
       }
