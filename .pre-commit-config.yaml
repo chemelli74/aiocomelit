@@ -13,19 +13,19 @@ repos:
       - id: check-yaml
       - id: detect-private-key
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.13.1 # renovate: customPinnedDependency=uv,datasource=pypi
+    rev: 0.13.6 # renovate: customPinnedDependency=uv,datasource=pypi
     hooks:
       - id: uv-lock
         args: ["--check"]
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.17.1
+    rev: v0.17.3
     hooks:
       - id: ruff-check
         args:
           - --fix
       - id: ruff-format
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v4.19.2
+    rev: v4.19.3
     hooks:
       - id: commitizen
         stages: [commit-msg]
@@ -43,7 +43,7 @@ repos:
     rev: v3.22.0
     hooks:
       - id: pyupgrade
-        args: [--py37-plus]
+        args: [--py312-plus]
   - repo: https://github.com/codespell-project/codespell
     rev: v2.4.3
     hooks:
@@ -51,7 +51,7 @@ repos:
         # Fixtures are verbatim device responses.
         exclude: ^tests/fixtures/
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v2.4.0
+    rev: v2.4.1
     hooks:
       - id: mypy
         pass_filenames: false
