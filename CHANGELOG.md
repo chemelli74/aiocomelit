@@ -1,5 +1,18 @@
 # Changelog
 
+## v3.0.2 (2026-11-02)
+
+### Bug fixes
+
+- Accept bracketed ipv6 hosts ([`391ce6a`](https://github.com/chemelli74/aiocomelit/commit/391ce6a38cd01343d4ae64e4add7db37ce4a7b8f))
+
+
+### Build system
+
+- Target python 3.12 in pyupgrade ([`38c52ec`](https://github.com/chemelli74/aiocomelit/commit/38c52ec22f7e3e277fe9cd4282365603a684441f))
+- Stop bumping the python minor/major version ([`af0754d`](https://github.com/chemelli74/aiocomelit/commit/af0754d0a5b5144403f82dbb36321a78b1da4d15))
+
+
 ## v3.0.1 (2026-10-18)
 
 ### Bug fixes
