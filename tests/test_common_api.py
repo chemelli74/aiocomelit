@@ -586,3 +586,17 @@ async def test_async_get_page_data_present_check(mock_session: ClientSession) ->
         None,
     )
     assert reply_status is True
+
+
+@pytest.mark.parametrize(
+    "host",
+    [
+        pytest.param("2001:db8::1", id="unbracketed"),
+        pytest.param("[2001:db8::1]", id="bracketed"),
+    ],
+)
+async def test_base_url_ipv6(mock_session: ClientSession, host: str) -> None:
+    """An IPv6 host is accepted with or without brackets."""
+    api = setup_api(ComeliteSerialBridgeApi, host, 8080, "1234", mock_session)
+
+    assert str(api.base_url) == "http://[2001:db8::1]:8080"
