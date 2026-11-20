@@ -107,7 +107,7 @@ class ComelitHttpApi(ComelitCommonApi):
     def __init__(self, host: str, port: int, pin: str, session: ClientSession) -> None:
         """Initialize the session."""
         self.device_pin = pin
-        self.base_url = URL.build(scheme="http", host=host, port=port)
+        self.base_url = URL.build(scheme="http", host=host.strip("[]"), port=port)
         self._headers = {
             "User-Agent": (
                 "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:78.0"
