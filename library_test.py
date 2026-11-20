@@ -26,6 +26,9 @@ from aiocomelit.const import (
     ALARM_ZONE,
     BRIDGE,
     COVER,
+    DEFAULT_HUB_MQTT_PASSWORD,
+    DEFAULT_HUB_MQTT_USER,
+    HUB,
     IRRIGATION,
     LIGHT,
     OTHER,
@@ -34,6 +37,7 @@ from aiocomelit.const import (
     AlarmZoneState,
 )
 from aiocomelit.devices.bridge import ComeliteSerialBridgeApi
+from aiocomelit.devices.hub import ComelitHubApi
 from aiocomelit.devices.vedo import ComelitVedoApi
 from aiocomelit.exceptions import CannotAuthenticate, CannotConnect, CannotRetrieveData
 
@@ -104,6 +108,61 @@ def get_arguments() -> tuple[ArgumentParser, Namespace]:
         help="Skip VEDO system login",
     )
     parser.add_argument(
+        "--hub",
+        "-hu",
+        type=str,
+        default="192.168.1.253",
+        help="Set Hub MQTT broker IP address",
+    )
+    parser.add_argument(
+        "--hub_mqtt_port",
+        "-hport",
+        type=int,
+        default=1883,
+        help="Set Hub MQTT broker port",
+    )
+    parser.add_argument(
+        "--hub_serial",
+        "-hsn",
+        type=str,
+        default="",
+        help="Set Hub serial number",
+    )
+    parser.add_argument(
+        "--hub_mqtt_user",
+        "-hmu",
+        type=str,
+        default=DEFAULT_HUB_MQTT_USER,
+        help="Set Hub MQTT broker username",
+    )
+    parser.add_argument(
+        "--hub_mqtt_password",
+        "-hmp",
+        type=str,
+        default=DEFAULT_HUB_MQTT_PASSWORD,
+        help="Set Hub MQTT broker password",
+    )
+    parser.add_argument(
+        "--hub_user",
+        "-huu",
+        type=str,
+        default="",
+        help="Set Hub username",
+    )
+    parser.add_argument(
+        "--hub_password",
+        "-hup",
+        type=str,
+        default="",
+        help="Set Hub password",
+    )
+    parser.add_argument(
+        "--hub_skip",
+        "-hs",
+        action="store_true",
+        help="Skip Hub login",
+    )
+    parser.add_argument(
         "--test",
         "-t",
         action="store_true",
@@ -132,7 +191,7 @@ def logger(host_type: str, host: str, port: int) -> str:
 
 
 async def execute_device_test(
-    api: ComeliteSerialBridgeApi,
+    api: ComeliteSerialBridgeApi | ComelitHubApi,
     device: ComelitDeviceObject,
     dev_type: str,
     api_logging: str,
@@ -215,6 +274,52 @@ async def bridge_test(session: ClientSession, args: Namespace) -> bool:
     await bridge_api.logout()
 
     return vedo_enabled
+
+
+async def hub_test(args: Namespace) -> None:
+    """Test code for Comelit Hub."""
+    hub_api = ComelitHubApi(
+        host=args.hub,
+        mqtt_port=args.hub_mqtt_port,
+        hub_serial=args.hub_serial,
+        hub_user=args.hub_user,
+        hub_password=args.hub_password,
+        mqtt_user=args.hub_mqtt_user,
+        mqtt_password=args.hub_mqtt_password,
+    )
+    api_logging = logger(HUB, args.hub, args.hub_mqtt_port)
+
+    logged = False
+    try:
+        logged = await hub_api.login()
+    except (CannotConnect, CannotAuthenticate):
+        pass
+    finally:
+        if not logged:
+            print(f"[{api_logging}] Unable to login")
+            sys.exit(1)
+    print(f"[{api_logging}] Logged = {logged}")
+    print("-" * 20)
+    devices = await hub_api.get_all_devices()
+    print(f"[{api_logging}] Devices: {devices}")
+    print("-" * 20)
+    if args.test:
+        for device in devices[LIGHT].values():
+            if device.index == INDEX:
+                await execute_device_test(hub_api, device, LIGHT, api_logging)
+                break
+        for device in devices[COVER].values():
+            if device.index == INDEX:
+                await execute_device_test(hub_api, device, COVER, api_logging)
+                break
+        for device in devices[OTHER].values():
+            if device.index == INDEX:
+                await execute_device_test(hub_api, device, OTHER, api_logging)
+                break
+        print("-" * 20)
+
+    print(f"[{api_logging}] Logout")
+    await hub_api.logout()
 
 
 async def vedo_test(
@@ -301,6 +406,13 @@ async def main() -> None:
 
     print("Closing HTTP ClientSession")
     await session.close()
+
+    if args.hub_skip:
+        print(f"{HUB}: Skipping login as requested")
+    elif not args.hub_serial:
+        print(f"{HUB}: Missing serial number. Skipping tests")
+    else:
+        await hub_test(args)
 
 
 def set_logging() -> None:
