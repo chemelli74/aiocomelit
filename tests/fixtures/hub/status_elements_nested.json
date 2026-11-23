@@ -1,0 +1,53 @@
+{
+  "elements": [
+    {
+      "id": "GEN#17#13#1#GEN#PL",
+      "data": {
+        "elements": [
+          {
+            "data": {
+              "id": "GEN#17#13#1#2#GEN#PL",
+              "elements": [
+                {
+                  "id": "DOM#LT#2#1",
+                  "data": {
+                    "descrizione": "Nested Light",
+                    "status": "1"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "data": {
+              "id": "DOM#BL#2#2",
+              "data": {
+                "descrizione": "Weird Shutter",
+                "status": "9"
+              }
+            }
+          },
+          {
+            "data": {
+              "id": "DOM#CL#2#3",
+              "data": {
+                "descrizione": "Unsupported Thermostat",
+                "sub_type": 3,
+                "status": "1"
+              }
+            }
+          },
+          {
+            "data": {
+              "id": "DOM#CN#2#4",
+              "data": {
+                "descrizione": "Power Meter",
+                "status": "1"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
